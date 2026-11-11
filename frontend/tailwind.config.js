@@ -9,33 +9,43 @@ export default {
     extend: {
       colors: {
         bg: {
-          app: '#0D1117',
-          sidebar: '#111720',
-          surface: '#151D27',
-          raised: '#1A2430',
+          app: '#090909',
+          sidebar: '#0C0C0C',
+          surface: '#111111',
+          raised: '#171717',
+          hover: '#1D1D1D',
         },
         border: {
-          subtle: '#222C38',
-          strong: '#293442',
+          subtle: '#1B1B1B',
+          primary: '#252525',
+          strong: '#303030',
         },
         text: {
-          primary: '#E6EDF3',
-          secondary: '#929EAD',
-          muted: '#647184',
+          primary: '#EAE8E3',
+          secondary: '#A09E98',
+          muted: '#686761',
         },
         accent: {
-          DEFAULT: '#65A9FF',
-          hover: '#82BAFF',
+          DEFAULT: '#EAE8E3',
+          subtle: '#AAA69E',
+          hover: '#FFFFFF',
         },
         status: {
-          success: '#35B88A',
-          warning: '#E8B45B',
-          critical: '#E16B73',
+          coral: '#D66A61',
+          amber: '#D6A65D',
+          sage: '#75A98B',
+          neutral: '#AAA69E',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['Geist Mono', 'JetBrains Mono', 'monospace'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      borderRadius: {
+        DEFAULT: '4px',
+        sm: '3px',
+        md: '6px',
+        lg: '8px',
       }
     },
   },

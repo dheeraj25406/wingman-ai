@@ -2,21 +2,13 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { Header } from '../components/Header';
-import {
-  Settings,
-  ShieldCheck,
-  CheckCircle2,
-  Database,
-  Sliders,
-  Server,
-  Zap,
-} from 'lucide-react';
+import { ShieldCheck, Zap } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [trafficRps, setTrafficRps] = useState<number>(10);
 
-  const { data: settingsData, isLoading } = useQuery({
+  const { data: settingsData } = useQuery({
     queryKey: ['settings'],
     queryFn: api.getSettings,
   });
@@ -45,73 +37,69 @@ export const SettingsPage: React.FC = () => {
   const safety = settingsData?.safety;
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
-        title="Platform Settings & Integration Status"
-        subtitle="Manage LLM configuration, simulator traffic throughput, observability endpoints, and safety gates"
+        title="Settings & System Configuration"
+        subtitle="LLM provider credentials, simulator throughput, and safety policies"
       />
 
-      <div className="p-6 space-y-6 max-w-4xl">
-        {/* Gemini API Card */}
-        <div className="bg-bg-surface border border-border-subtle rounded-md p-5 space-y-4">
+      <div className="p-6 space-y-6 max-w-4xl mx-auto w-full">
+        {/* Gemini Provider Status Strip */}
+        <section className="border border-border-subtle bg-bg-surface rounded-sm p-5 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded bg-accent/20 flex items-center justify-center text-accent">
-                <Zap size={14} />
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                  Google Gemini Provider Configuration
-                </h3>
-                <span className="text-[11px] text-text-muted">Strict LLM Provider (No fallback providers allowed)</span>
-              </div>
+            <div>
+              <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider font-mono">
+                Google Gemini API Provider
+              </h3>
+              <span className="text-[11px] text-text-muted">Strict LLM Provider (google-genai SDK)</span>
             </div>
             <span
-              className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-sm uppercase ${
                 gemini?.configured
-                  ? 'bg-status-success/20 text-status-success'
-                  : 'bg-status-warning/20 text-status-warning'
+                  ? 'text-status-sage bg-status-sage/10 border border-status-sage/20'
+                  : 'text-status-amber bg-status-amber/10 border border-status-amber/20'
               }`}
             >
-              {gemini?.configured ? 'API KEY CONFIGURED' : 'MISSING KEY'}
+              {gemini?.configured ? 'Active' : 'Unconfigured'}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-            <div className="p-3 bg-bg-raised rounded border border-border-subtle">
-              <span className="text-[10px] text-text-muted block">Target Model Identifier</span>
-              <span className="text-sm font-bold text-accent">{gemini?.model_identifier || 'gemini-3.5-flash-lite'}</span>
+            <div className="p-3 bg-bg-raised rounded-sm border border-border-subtle">
+              <span className="text-[10px] uppercase text-text-muted block">Target Model Identifier</span>
+              <span className="text-xs font-medium text-text-primary mt-1 block">
+                {gemini?.model_identifier || 'gemini-3.5-flash-lite'}
+              </span>
             </div>
-            <div className="p-3 bg-bg-raised rounded border border-border-subtle">
-              <span className="text-[10px] text-text-muted block">API Key Status</span>
-              <span className="text-sm font-bold text-text-primary">{gemini?.masked_key || 'Configured via .env'}</span>
+            <div className="p-3 bg-bg-raised rounded-sm border border-border-subtle">
+              <span className="text-[10px] uppercase text-text-muted block">API Key Credential Status</span>
+              <span className="text-xs font-medium text-text-primary mt-1 block">
+                {gemini?.masked_key || 'Configured via .env'}
+              </span>
             </div>
           </div>
 
           <p className="text-[11px] text-text-secondary leading-relaxed">
-            All incident investigation hypotheses and remediation synthesis run strictly through Google Gen AI SDK
-            using <code className="text-accent">gemini-3.5-flash-lite</code> with structured Pydantic schema validation.
+            All incident investigations, hypothesis reasoning, and remediation proposals are structured with Pydantic schemas
+            and parsed via <code className="text-text-primary font-mono">gemini-3.5-flash-lite</code>.
           </p>
-        </div>
+        </section>
 
-        {/* Simulator Traffic Controller */}
-        <div className="bg-bg-surface border border-border-subtle rounded-md p-5 space-y-4">
+        {/* Traffic Generator Controller */}
+        <section className="border border-border-subtle bg-bg-surface rounded-sm p-5 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
-            <div className="flex items-center gap-2">
-              <Sliders size={15} className="text-accent" />
-              <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                Microservice Simulator Traffic Generator
-              </h3>
-            </div>
-            <span className="text-xs font-mono text-status-success font-semibold">
-              RUNNING ({trafficRps} RPS)
+            <span className="text-xs font-medium text-text-primary uppercase tracking-wider font-mono">
+              Simulator Background Traffic Rate
+            </span>
+            <span className="text-xs font-mono text-status-sage">
+              Active ({trafficRps} RPS)
             </span>
           </div>
 
           <div className="space-y-3">
             <div className="flex justify-between text-xs font-mono">
-              <span className="text-text-secondary">Simulated Fleet Traffic Rate:</span>
-              <span className="text-accent font-bold">{trafficRps} Requests / Second</span>
+              <span className="text-text-muted">Fleet Throughput:</span>
+              <span className="text-text-primary font-medium">{trafficRps} Requests / Second</span>
             </div>
             <input
               type="range"
@@ -121,42 +109,41 @@ export const SettingsPage: React.FC = () => {
               value={trafficRps}
               onChange={(e) => setTrafficRps(parseInt(e.target.value))}
               onMouseUp={() => trafficMutation.mutate(trafficRps)}
-              className="w-full accent-accent cursor-pointer"
+              className="w-full accent-text-primary cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-text-muted font-mono">
-              <span>1 RPS (Low idle)</span>
-              <span>25 RPS (Normal operational)</span>
-              <span>50 RPS (High load)</span>
+              <span>1 RPS (Idle)</span>
+              <span>25 RPS (Nominal)</span>
+              <span>50 RPS (Peak load)</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Safety Gate Settings */}
-        <div className="bg-bg-surface border border-border-subtle rounded-md p-5 space-y-3">
-          <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
-            <ShieldCheck size={16} className="text-status-success" />
-            <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-              Autonomous Remediation Safety Policies
+        {/* Safety Policies */}
+        <section className="border border-border-subtle bg-bg-surface rounded-sm p-5 space-y-3">
+          <div className="pb-3 border-b border-border-subtle">
+            <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider font-mono">
+              Autonomous Remediation Safety Boundaries
             </h3>
           </div>
 
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between py-1.5 border-b border-border-subtle/50">
-              <span className="text-text-secondary">Human-in-the-Loop Approval Requirement:</span>
-              <span className="font-mono text-status-success font-bold">MANDATORY (Enforced)</span>
+          <div className="space-y-2 text-xs font-mono">
+            <div className="flex items-center justify-between py-1.5 border-b border-border-subtle">
+              <span className="text-text-muted">Human Operator Approval Gate:</span>
+              <span className="text-status-sage font-medium">MANDATORY (Enforced)</span>
             </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-border-subtle/50">
-              <span className="text-text-secondary">Arbitrary Shell / Code Execution:</span>
-              <span className="font-mono text-status-critical font-bold">BLOCKED (Disabled)</span>
+            <div className="flex items-center justify-between py-1.5 border-b border-border-subtle">
+              <span className="text-text-muted">Arbitrary Terminal / Shell Execution:</span>
+              <span className="text-status-coral font-medium">DISABLED (Zero Arbitrary Execution)</span>
             </div>
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-text-secondary">Permitted Remediation Actions:</span>
-              <span className="font-mono text-text-primary text-[11px]">
+              <span className="text-text-muted">Permitted Remediation Functions:</span>
+              <span className="text-text-secondary text-[11px]">
                 RESTART_SERVICE, RESET_CONNECTION_POOL, ROLLBACK_DEPLOYMENT
               </span>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -3,19 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { Header } from '../components/Header';
 import {
-  FlaskConical,
   Play,
-  Square,
-  AlertTriangle,
-  Zap,
-  Clock,
-  Sliders,
-  ShieldAlert,
   Database,
   Cpu,
   Layers,
   HardDrive,
   GitCommit,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const FaultLabPage: React.FC = () => {
@@ -25,16 +20,10 @@ export const FaultLabPage: React.FC = () => {
   const [duration, setDuration] = useState<number>(180);
   const [targetService, setTargetService] = useState<string>('order-service');
 
-  const { data: faultsData, isLoading } = useQuery({
+  const { data: faultsData } = useQuery({
     queryKey: ['faults'],
     queryFn: api.getFaults,
     refetchInterval: 2500,
-  });
-
-  const { data: trafficData } = useQuery({
-    queryKey: ['traffic'],
-    queryFn: api.getTraffic,
-    refetchInterval: 3000,
   });
 
   const injectMutation = useMutation({
@@ -68,7 +57,7 @@ export const FaultLabPage: React.FC = () => {
       name: 'DB Connection Pool Exhaustion',
       defaultService: 'order-service',
       icon: Database,
-      desc: 'Simulates PostgreSQL connection saturation (100/100 active connections) causing query acquisition timeouts.',
+      desc: 'Saturates PostgreSQL connection pool (100/100 active connections) triggering query acquisition timeouts.',
       expectedCause: 'Database connection pool exhausted due to unreleased client connections',
     },
     {
@@ -127,73 +116,74 @@ export const FaultLabPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
-        title="Controlled Fault Injection Lab"
-        subtitle="Safe, isolated production failure simulations to test ML anomaly detection and autonomous agent investigation"
+        title="Controlled Fault Lab"
+        subtitle="Safe, isolated telemetry disruption injection for testing ML detection and agent workflows"
       />
 
-      <div className="p-6 space-y-6">
-        {/* Active Injected Faults Panel */}
-        <div className="bg-bg-surface border border-border-subtle rounded-md p-5 space-y-3">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Active Fault Injections Section */}
+        <section className="border border-border-subtle bg-bg-surface rounded-sm p-5 space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
-            <div className="flex items-center gap-2">
-              <FlaskConical size={16} className="text-status-critical" />
-              <h2 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                Active Injected Faults ({activeFaults.length})
-              </h2>
-            </div>
-            {activeFaults.length > 0 && (
-              <span className="text-[11px] font-mono text-status-critical animate-pulse font-semibold">
-                Telemetry degradation active
+            <span className="text-xs font-medium text-text-primary uppercase tracking-wider font-mono">
+              Active Injected Faults ({activeFaults.length})
+            </span>
+            {activeFaults.length > 0 ? (
+              <span className="text-[10px] font-mono text-status-coral uppercase">
+                Degradation Active
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono text-text-muted uppercase">
+                Clean Telemetry Baseline
               </span>
             )}
           </div>
 
           {activeFaults.length === 0 ? (
-            <div className="py-6 text-center text-text-muted text-xs">
-              No active fault simulations running. The fleet is operating under normal baseline traffic.
+            <div className="py-6 text-center text-text-muted text-xs font-mono">
+              No active fault injections running. Fleet is operating within normal baseline telemetry.
             </div>
           ) : (
             <div className="space-y-2">
               {activeFaults.map((f: any) => (
                 <div
                   key={f.id}
-                  className="p-3 bg-bg-raised border border-status-critical/30 rounded flex items-center justify-between text-xs"
+                  className="p-3 bg-bg-raised border border-border-primary rounded-sm flex items-center justify-between text-xs"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-status-critical">{f.fault_type}</span>
-                      <span className="text-text-muted text-[11px]">on</span>
-                      <span className="font-mono text-accent">{f.target_service_id}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-surface text-text-secondary">
-                        Intensity: {(f.intensity * 100).toFixed(0)}%
+                      <span className="font-mono text-status-coral font-medium">{f.fault_type}</span>
+                      <span className="text-text-muted text-[11px] font-mono">on</span>
+                      <span className="font-mono text-text-primary">{f.target_service_id}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-sm bg-bg-surface text-text-muted border border-border-subtle">
+                        {(f.intensity * 100).toFixed(0)}% Intensity
                       </span>
                     </div>
                     <div className="text-[11px] text-text-secondary">
-                      <span className="text-text-muted">Ground-Truth Cause (Isolated from Agent): </span>
-                      <span className="font-medium text-text-primary">{f.expected_root_cause}</span>
+                      <span className="text-text-muted font-mono">Ground-Truth Root Cause: </span>
+                      <span>{f.expected_root_cause}</span>
                     </div>
                   </div>
 
                   <button
                     onClick={() => stopMutation.mutate(f.id)}
                     disabled={stopMutation.isPending}
-                    className="px-3 py-1.5 rounded bg-status-critical/15 text-status-critical border border-status-critical/30 text-xs font-mono font-semibold hover:bg-status-critical/25 transition-colors disabled:opacity-50"
+                    className="px-2.5 py-1 rounded-sm bg-bg-surface border border-border-subtle hover:border-text-secondary text-text-primary text-xs font-mono transition-colors disabled:opacity-50"
                   >
-                    Stop Simulation
+                    Halt Simulation
                   </button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Fault Selector Grid */}
+        {/* Fault Scenario Catalog (Grid) */}
         <div>
-          <h2 className="text-xs font-semibold text-text-primary uppercase tracking-wider mb-3">
-            Select Controlled Failure Scenario
-          </h2>
+          <span className="text-xs font-medium text-text-primary uppercase tracking-wider font-mono block mb-3">
+            Available Fault Scenarios (7)
+          </span>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {faultCatalog.map((item) => {
               const Icon = item.icon;
@@ -202,42 +192,38 @@ export const FaultLabPage: React.FC = () => {
                 <div
                   key={item.type}
                   onClick={() => handleSelectFault(item)}
-                  className={`p-4 rounded-md border text-xs cursor-pointer transition-all ${
+                  className={`p-4 rounded-sm border text-xs cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-bg-raised border-accent ring-1 ring-accent/40'
-                      : 'bg-bg-surface border-border-subtle hover:border-border-strong'
+                      ? 'bg-bg-raised border-text-primary'
+                      : 'bg-bg-surface border-border-subtle hover:border-border-primary'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div
-                      className={`w-7 h-7 rounded flex items-center justify-center ${
-                        isSelected ? 'bg-accent/20 text-accent' : 'bg-bg-raised text-text-muted'
-                      }`}
-                    >
-                      <Icon size={14} />
-                    </div>
-                    <span className="font-semibold text-text-primary text-xs">{item.name}</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon size={14} className={isSelected ? 'text-text-primary' : 'text-text-muted'} />
+                    <span className="font-medium text-text-primary text-xs">{item.name}</span>
                   </div>
-                  <p className="text-[11px] text-text-secondary leading-relaxed mb-2">{item.desc}</p>
-                  <div className="text-[10px] font-mono text-text-muted">Target: {item.defaultService}</div>
+                  <p className="text-[11px] text-text-secondary leading-relaxed mb-2.5">{item.desc}</p>
+                  <div className="text-[10px] font-mono text-text-muted">Target Service: {item.defaultService}</div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Configuration Sliders & Inject Action */}
-        <div className="bg-bg-surface border border-border-subtle rounded-md p-5 space-y-4">
-          <h3 className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-            Injection Parameters ({selectedFault})
-          </h3>
+        {/* Injection Parameter Controls & Trigger */}
+        <section className="border border-border-subtle bg-bg-surface rounded-sm p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+            <span className="text-xs font-medium text-text-primary uppercase tracking-wider font-mono">
+              Simulation Parameters: {selectedFault}
+            </span>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="text-[11px] font-medium text-text-secondary flex justify-between mb-1.5">
-                <span>Fault Intensity:</span>
-                <span className="font-mono text-accent font-bold">{(intensity * 100).toFixed(0)}%</span>
-              </label>
+              <div className="flex justify-between text-xs font-mono mb-2">
+                <span className="text-text-muted">Fault Intensity:</span>
+                <span className="text-text-primary font-medium">{(intensity * 100).toFixed(0)}%</span>
+              </div>
               <input
                 type="range"
                 min="0.2"
@@ -245,16 +231,16 @@ export const FaultLabPage: React.FC = () => {
                 step="0.05"
                 value={intensity}
                 onChange={(e) => setIntensity(parseFloat(e.target.value))}
-                className="w-full accent-accent cursor-pointer"
+                className="w-full accent-text-primary cursor-pointer"
               />
-              <span className="text-[10px] text-text-muted mt-1 block">Higher intensity increases error rate & latency impact</span>
+              <span className="text-[10px] text-text-muted mt-1 block font-mono">Higher intensity forces steeper latency & error spikes</span>
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-text-secondary flex justify-between mb-1.5">
-                <span>Duration (Seconds):</span>
-                <span className="font-mono text-accent font-bold">{duration}s</span>
-              </label>
+              <div className="flex justify-between text-xs font-mono mb-2">
+                <span className="text-text-muted">Duration (Seconds):</span>
+                <span className="text-text-primary font-medium">{duration}s</span>
+              </div>
               <input
                 type="range"
                 min="30"
@@ -262,17 +248,17 @@ export const FaultLabPage: React.FC = () => {
                 step="30"
                 value={duration}
                 onChange={(e) => setDuration(parseInt(e.target.value))}
-                className="w-full accent-accent cursor-pointer"
+                className="w-full accent-text-primary cursor-pointer"
               />
-              <span className="text-[10px] text-text-muted mt-1 block">Fault will automatically expire after duration</span>
+              <span className="text-[10px] text-text-muted mt-1 block font-mono">Fault auto-terminates after countdown</span>
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-text-secondary block mb-1.5">Target Microservice:</label>
+              <span className="text-xs text-text-muted block mb-2 font-mono">Target Service:</span>
               <select
                 value={targetService}
                 onChange={(e) => setTargetService(e.target.value)}
-                className="w-full bg-bg-raised border border-border-subtle rounded text-xs px-3 py-1.5 text-text-primary font-mono focus:outline-none focus:border-accent"
+                className="w-full bg-bg-raised border border-border-subtle rounded-sm text-xs px-2.5 py-1.5 text-text-primary font-mono focus:outline-none focus:border-border-strong"
               >
                 <option value="order-service">order-service</option>
                 <option value="checkout-service">checkout-service</option>
@@ -288,13 +274,13 @@ export const FaultLabPage: React.FC = () => {
             <button
               onClick={() => injectMutation.mutate()}
               disabled={injectMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2 rounded bg-status-critical text-bg-app font-semibold text-xs hover:bg-status-critical/90 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-sm bg-text-primary text-bg-app font-medium text-xs hover:bg-white transition-colors disabled:opacity-50"
             >
-              <Play size={14} />
+              <Play size={12} />
               <span>{injectMutation.isPending ? 'Injecting Fault...' : 'Inject Fault into Telemetry Pipeline'}</span>
             </button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

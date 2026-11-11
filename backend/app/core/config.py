@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     PORT: int = 8000
     HOST: str = "0.0.0.0"
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "http://localhost:5180,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5180"
 
     # Gemini LLM Provider (Google Gen AI SDK)
     GEMINI_API_KEY: str = ""
