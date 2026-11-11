@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - HOST=0.0.0.0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - DATABASE_URL=sqlite+aiosqlite:///./wingman.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80
+    volumes:
+      - ./ml/artifacts:/app/ml/artifacts
+      - ./data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Optional Observability Components via Profiles
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    profiles: ["observability"]
+    ports:
+      - "3100:3100"
+    restart: unless-stopped

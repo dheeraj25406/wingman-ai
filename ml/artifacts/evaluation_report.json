@@ -1,0 +1,93 @@
+{
+  "binary_detection": {
+    "threshold": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "isolation_forest": {
+      "precision": 0.9983,
+      "recall": 0.9725,
+      "f1": 0.9852
+    }
+  },
+  "multiclass_classification": {
+    "macro_precision": 0.9993,
+    "macro_recall": 0.9993,
+    "macro_f1": 0.9993,
+    "confusion_matrix": [
+      [
+        200,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        200,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        200,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        200,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        200,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        199,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        200
+      ]
+    ],
+    "classes": [
+      "NORMAL",
+      "DB_POOL_EXHAUSTION",
+      "CPU_SATURATION",
+      "MEMORY_PRESSURE",
+      "DOWNSTREAM_API_FAILURE",
+      "QUEUE_BACKLOG",
+      "DEPLOYMENT_REGRESSION"
+    ]
+  }
+}
