@@ -1,5 +1,6 @@
 import os
 from typing import List
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,15 @@ class Settings(BaseSettings):
 
     # Database (PostgreSQL for production, SQLite for local standalone demo)
     DATABASE_URL: str = "sqlite+aiosqlite:///./wingman.db"
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     # Observability
     PROMETHEUS_URL: str = "http://localhost:9090"
