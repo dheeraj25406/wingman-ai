@@ -382,75 +382,75 @@ class ServiceMesh:
     # --------------------------------------------------------------------------
     # Telemetry Sampling & Aggregation Loop (Every 5 seconds)
     # --------------------------------------------------------------------------
+    def sample_metrics_now(self):
+        """Collect and record an immediate telemetry metric snapshot across all services."""
+        now_epoch = time.time()
+        iso_time = datetime.now(timezone.utc).isoformat()
+
+        for service_id, baseline in self.SERVICE_BASELINES.items():
+            active_fault = fault_engine.get_fault_for_service(service_id)
+
+            cpu = baseline["cpu"] + random.uniform(-2.0, 2.0)
+            mem = baseline["memory"] + random.uniform(-1.0, 1.0)
+            req_rate = self._target_rps * random.uniform(0.9, 1.1)
+            err_rate = random.uniform(0.001, 0.005)
+            p50 = baseline["latency_p50"] + random.uniform(-2.0, 2.0)
+            p95 = baseline["latency_p95"] + random.uniform(-3.0, 3.0)
+            p99 = baseline["latency_p99"] + random.uniform(-5.0, 5.0)
+            db_conn = baseline["db_conn"] + random.uniform(-2.0, 2.0)
+            queue = baseline["queue"] + random.uniform(-1.0, 1.0)
+            timeout_rate = 0.0
+
+            if active_fault:
+                intensity = active_fault.intensity
+                if active_fault.fault_type == "db_pool_exhaustion":
+                    db_conn = 98.0 + random.uniform(0.0, 2.0)
+                    err_rate = 0.65 * intensity
+                    p95 = 2800.0 * intensity
+                    p99 = 3500.0 * intensity
+                    timeout_rate = 0.45 * intensity
+                elif active_fault.fault_type == "cpu_saturation":
+                    cpu = 95.0 + random.uniform(0.0, 4.5)
+                    p95 = 1400.0 * intensity
+                    p99 = 2200.0 * intensity
+                elif active_fault.fault_type == "memory_pressure":
+                    mem = 94.0 + random.uniform(0.0, 5.0)
+                    p95 = 1100.0 * intensity
+                    err_rate = 0.25 * intensity
+                elif active_fault.fault_type == "downstream_latency":
+                    p50 = 1800.0 * intensity
+                    p95 = 3800.0 * intensity
+                    p99 = 4500.0 * intensity
+                    timeout_rate = 0.35 * intensity
+                elif active_fault.fault_type == "downstream_failure":
+                    err_rate = 0.85 * intensity
+                elif active_fault.fault_type == "queue_backlog":
+                    queue = 12500.0 * intensity
+                    p95 = 950.0 * intensity
+                elif active_fault.fault_type == "bad_deployment":
+                    err_rate = 0.90 * intensity
+
+            metric_point = ServiceMetricPoint(
+                timestamp=iso_time,
+                epoch=now_epoch,
+                service_id=service_id,
+                cpu_utilization=round(max(1.0, min(100.0, cpu)), 2),
+                memory_utilization=round(max(1.0, min(100.0, mem)), 2),
+                request_rate=round(req_rate, 2),
+                error_rate=round(max(0.0, min(1.0, err_rate)), 4),
+                latency_p50=round(max(1.0, p50), 2),
+                latency_p95=round(max(2.0, p95), 2),
+                latency_p99=round(max(5.0, p99), 2),
+                db_connections=round(max(0.0, min(100.0, db_conn)), 2),
+                queue_depth=round(max(0.0, queue), 2),
+                timeout_rate=round(max(0.0, min(1.0, timeout_rate)), 4),
+            )
+            telemetry_buffer.record_metric(metric_point)
+
     async def _metric_collector_loop(self):
         while self._running:
             try:
-                now_epoch = time.time()
-                iso_time = datetime.now(timezone.utc).isoformat()
-
-                for service_id, baseline in self.SERVICE_BASELINES.items():
-                    active_fault = fault_engine.get_fault_for_service(service_id)
-
-                    # Compute dynamic variations
-                    cpu = baseline["cpu"] + random.uniform(-2.0, 2.0)
-                    mem = baseline["memory"] + random.uniform(-1.0, 1.0)
-                    req_rate = self._target_rps * random.uniform(0.9, 1.1)
-                    err_rate = random.uniform(0.001, 0.005)
-                    p50 = baseline["latency_p50"] + random.uniform(-2.0, 2.0)
-                    p95 = baseline["latency_p95"] + random.uniform(-3.0, 3.0)
-                    p99 = baseline["latency_p99"] + random.uniform(-5.0, 5.0)
-                    db_conn = baseline["db_conn"] + random.uniform(-2.0, 2.0)
-                    queue = baseline["queue"] + random.uniform(-1.0, 1.0)
-                    timeout_rate = 0.0
-
-                    # Apply active faults to metrics
-                    if active_fault:
-                        intensity = active_fault.intensity
-                        if active_fault.fault_type == "db_pool_exhaustion":
-                            db_conn = 98.0 + random.uniform(0.0, 2.0)
-                            err_rate = 0.65 * intensity
-                            p95 = 2800.0 * intensity
-                            p99 = 3500.0 * intensity
-                            timeout_rate = 0.45 * intensity
-                        elif active_fault.fault_type == "cpu_saturation":
-                            cpu = 95.0 + random.uniform(0.0, 4.5)
-                            p95 = 1400.0 * intensity
-                            p99 = 2200.0 * intensity
-                        elif active_fault.fault_type == "memory_pressure":
-                            mem = 94.0 + random.uniform(0.0, 5.0)
-                            p95 = 1100.0 * intensity
-                            err_rate = 0.25 * intensity
-                        elif active_fault.fault_type == "downstream_latency":
-                            p50 = 1800.0 * intensity
-                            p95 = 3800.0 * intensity
-                            p99 = 4500.0 * intensity
-                            timeout_rate = 0.35 * intensity
-                        elif active_fault.fault_type == "downstream_failure":
-                            err_rate = 0.85 * intensity
-                        elif active_fault.fault_type == "queue_backlog":
-                            queue = 12500.0 * intensity
-                            p95 = 950.0 * intensity
-                        elif active_fault.fault_type == "bad_deployment":
-                            err_rate = 0.90 * intensity
-
-                    # Constrain ranges
-                    metric_point = ServiceMetricPoint(
-                        timestamp=iso_time,
-                        epoch=now_epoch,
-                        service_id=service_id,
-                        cpu_utilization=round(max(1.0, min(100.0, cpu)), 2),
-                        memory_utilization=round(max(1.0, min(100.0, mem)), 2),
-                        request_rate=round(req_rate, 2),
-                        error_rate=round(max(0.0, min(1.0, err_rate)), 4),
-                        latency_p50=round(max(1.0, p50), 2),
-                        latency_p95=round(max(2.0, p95), 2),
-                        latency_p99=round(max(5.0, p99), 2),
-                        db_connections=round(max(0.0, min(100.0, db_conn)), 2),
-                        queue_depth=round(max(0.0, queue), 2),
-                        timeout_rate=round(max(0.0, min(1.0, timeout_rate)), 4),
-                    )
-                    telemetry_buffer.record_metric(metric_point)
-
+                self.sample_metrics_now()
                 await asyncio.sleep(5.0)
             except asyncio.CancelledError:
                 break

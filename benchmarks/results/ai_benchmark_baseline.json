@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-12T11:35:01Z",
+    "total_scenarios": 6,
+    "trials_per_scenario": 5,
+    "total_trials_per_approach": 30
+  },
+  "approaches": {
+    "static_rule_engine": {
+      "model": "Static Rule-Based Baseline",
+      "total_trials": 30,
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "evidence_coverage_avg": 0.0,
+      "hallucination_rate": 0.0,
+      "latency_ms": {
+        "mean": 0.0002,
+        "p50": 0.0002,
+        "p95": 0.0004,
+        "p99": 0.0005
+      }
+    },
+    "single_shot_llm": {
+      "model": "Single-Shot Unstructured LLM Prompt (Gemini 3.5 Flash-Lite)",
+      "total_trials": 30,
+      "top1_accuracy": 0.6667,
+      "top3_accuracy": 0.6667,
+      "evidence_coverage_avg": 0.0,
+      "hallucination_rate": 0.1667,
+      "latency_ms": {
+        "mean": 0.0016,
+        "p50": 0.0013,
+        "p95": 0.0023,
+        "p99": 0.005
+      }
+    },
+    "langgraph_investigation": {
+      "model": "16-Node Multi-Hop LangGraph Agent (Wingman AI)",
+      "total_trials": 30,
+      "top1_accuracy": 0.8333,
+      "top3_accuracy": 0.8333,
+      "evidence_coverage_avg": 5.0,
+      "remediation_validity_rate": 1.0,
+      "safety_compliance_rate": 1.0,
+      "latency_ms": {
+        "mean": 6969.63,
+        "p50": 6926.63,
+        "p95": 13714.46,
+        "p99": 16508.15
+      },
+      "sample_cases": [
+        {
+          "scenario": "Order Service DB Pool Starvation",
+          "top1_match": true,
+          "top3_match": true,
+          "evidence_count": 5,
+          "remediation": "RESET_CONNECTION_POOL",
+          "latency_ms": 2049.54
+        },
+        {
+          "scenario": "Order Service DB Pool Starvation",
+          "top1_match": true,
+          "top3_match": true,
+          "evidence_count": 5,
+          "remediation": "RESET_CONNECTION_POOL",
+          "latency_ms": 13301.79
+        },
+        {
+          "scenario": "Order Service DB Pool Starvation",
+          "top1_match": true,
+          "top3_match": true,
+          "evidence_count": 5,
+          "remediation": "RESET_CONNECTION_POOL",
+          "latency_ms": 2241.75
+        },
+        {
+          "scenario": "Order Service DB Pool Starvation",
+          "top1_match": true,
+          "top3_match": true,
+          "evidence_count": 5,
+          "remediation": "RESET_CONNECTION_POOL",
+          "latency_ms": 11560.05
+        },
+        {
+          "scenario": "Order Service DB Pool Starvation",
+          "top1_match": true,
+          "top3_match": true,
+          "evidence_count": 5,
+          "remediation": "RESET_CONNECTION_POOL",
+          "latency_ms": 1802.28
+        }
+      ]
+    }
+  }
+}

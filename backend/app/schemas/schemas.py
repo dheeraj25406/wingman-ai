@@ -93,6 +93,7 @@ class RemediationProposalSchema(BaseModel):
 class RemediationDecisionRequest(BaseModel):
     proposal_id: str
     operator_notes: Optional[str] = None
+    force_failure: bool = False
 
 
 # Incident Schemas

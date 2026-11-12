@@ -71,6 +71,16 @@ class DiagnosticTools:
         }
 
     @staticmethod
+    def get_recent_traces(service_id: Optional[str] = None, has_error: Optional[bool] = None, limit: int = 10) -> Dict[str, Any]:
+        """Fetches recent distributed traces across services."""
+        traces = telemetry_buffer.get_recent_traces(service_id=service_id, has_error=has_error, limit=limit)
+        return {
+            "service_id": service_id,
+            "count": len(traces),
+            "traces": traces,
+        }
+
+    @staticmethod
     def get_trace(trace_id: str) -> Dict[str, Any]:
         """Fetches distributed trace span hierarchy and error details."""
         spans = telemetry_buffer.get_trace(trace_id)

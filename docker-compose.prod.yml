@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wingman-postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wingman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      POSTGRES_DB: ${POSTGRES_DB:-wingman}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wingman} -d ${POSTGRES_DB:-wingman}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    # Database is strictly private; no host port mapping in production
+    expose:
+      - "5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wingman-backend-prod
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - HOST=0.0.0.0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wingman}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wingman}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:80,http://localhost:3000}
+      - ADMIN_API_KEY=${ADMIN_API_KEY:?ADMIN_API_KEY is mandatory in production}
+      - PUBLIC_DEMO_MODE=false
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_PER_MINUTE=120
+      - RATE_LIMIT_SENSITIVE_PER_MINUTE=20
+    volumes:
+      - ./ml/artifacts:/app/ml/artifacts:ro
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    # Backend is internal to Docker network; frontend reverse proxy provides public ingress
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wingman-frontend-prod
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data_prod:

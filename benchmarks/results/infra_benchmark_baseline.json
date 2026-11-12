@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-12T11:36:51Z",
+    "host_os": "darwin"
+  },
+  "container_resources": {
+    "wingman-backend": {
+      "cpu_percentage": "0.45%",
+      "memory_usage": "237.3MiB / 7.653GiB",
+      "memory_percentage": "3.03%",
+      "network_io": "2.95MB / 3.6MB",
+      "block_io": "40.3MB / 16.4kB"
+    },
+    "wingman-frontend": {
+      "cpu_percentage": "0.00%",
+      "memory_usage": "9.383MiB / 7.653GiB",
+      "memory_percentage": "0.12%",
+      "network_io": "1.22MB / 1.25MB",
+      "block_io": "197kB / 8.19kB"
+    },
+    "wingman-postgres": {
+      "cpu_percentage": "0.01%",
+      "memory_usage": "43.9MiB / 7.653GiB",
+      "memory_percentage": "0.56%",
+      "network_io": "429kB / 2.63MB",
+      "block_io": "6.5MB / 17.6MB"
+    }
+  },
+  "database_latencies": {
+    "iterations": 40,
+    "single_row_lookup": {
+      "mean_ms": 1.601,
+      "p50_ms": 1.356,
+      "p95_ms": 1.707,
+      "p99_ms": 6.6
+    },
+    "eager_loaded_history_query": {
+      "mean_ms": 1.724,
+      "p50_ms": 1.653,
+      "p95_ms": 2.012,
+      "p99_ms": 2.507
+    },
+    "transactional_write_rollback": {
+      "mean_ms": 0.706,
+      "p50_ms": 0.626,
+      "p95_ms": 0.966,
+      "p99_ms": 1.666
+    }
+  }
+}

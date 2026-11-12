@@ -67,4 +67,12 @@
 1. **Model Decoupling**: Machine learning detectors run independently of the LLM. If the LLM is down or unconfigured, ML detection, alert clustering, and metric analysis still operate deterministically.
 2. **Zero Fabricated Evidence**: The LLM is never provided unmetered logs or allowed to speculate without evidence IDs. Hypotheses must explicitly cite verified evidence artifacts gathered by deterministic tools.
 3. **Strict Sandboxing**: No arbitrary code execution or shell commands. All remediation actions are strictly bounded Python callbacks requiring manual user approval in the UI.
-4. **Resilient Local Execution**: Designed to execute comfortably on Apple Silicon (16GB RAM) without requiring heavy container overhead, with full Docker Compose support for production parity.
+4. **Resilient Local Execution**: Designed to execute comfortably on Apple Silicon without requiring heavy container overhead, with full Docker Compose support for production parity.
+
+## Telemetry Source & Simulation Architecture
+> [!NOTE]
+> In the current reference implementation, the 6 monitored microservices (`api-gateway`, `user-service`, `product-service`, `checkout-service`, `payment-service`, `order-service`) operate through an in-process discrete-event microservice mesh simulator (`simulator/services/mesh.py`).
+>
+> In contrast, the application itself runs as **3 independently containerized production services**: `wingman-postgres` (PostgreSQL 16), `wingman-backend` (FastAPI + LangGraph + Uvicorn), and `wingman-frontend` (React 19 + Nginx reverse proxy).
+>
+> The simulator models realistic inter-service HTTP request graphs, database connection pools, queue backlogs, memory pressure, and CPU saturation, emitting continuous time-series metrics, structured logs, and OpenTelemetry-compatible traces. This architecture enables reproducible fault injection, benchmarking, and closed-loop recovery verification without requiring a live multi-node Kubernetes cluster. For production deployments with external infrastructure, the telemetry ingestion pipelines connect to live Prometheus, OpenTelemetry Collector, and Loki endpoints.

@@ -40,11 +40,14 @@ class IncidentClassifier:
             self.load(model_path)
 
     def train(self, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray):
-        # 1. Train LightGBM
+        # 1. Train Optimized LightGBM
         self.model = LGBMClassifier(
-            n_estimators=100,
-            learning_rate=0.05,
-            num_leaves=31,
+            n_estimators=120,
+            learning_rate=0.04,
+            num_leaves=45,
+            min_child_samples=8,
+            subsample=0.85,
+            colsample_bytree=0.85,
             random_state=42,
             n_jobs=-1,
             verbosity=-1,

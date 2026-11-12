@@ -139,48 +139,48 @@ export const ServiceMapPage: React.FC = () => {
       source: 'api-gateway',
       target: 'user-service',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
     {
       id: 'e-gw-prod',
       source: 'api-gateway',
       target: 'product-service',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
     {
       id: 'e-gw-check',
       source: 'api-gateway',
       target: 'checkout-service',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
     {
       id: 'e-check-pay',
       source: 'checkout-service',
       target: 'payment-service',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
     {
       id: 'e-check-ord',
       source: 'checkout-service',
       target: 'order-service',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
     {
       id: 'e-ord-db',
       source: 'order-service',
       target: 'database',
       animated: true,
-      style: { stroke: '#303030' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#303030' },
+      style: { stroke: '#404040' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#404040' },
     },
   ];
 
@@ -208,7 +208,7 @@ export const ServiceMapPage: React.FC = () => {
             onNodeClick={(_, node) => setSelectedService(node.id)}
             fitView
           >
-            <Background color="#1B1B1B" gap={18} size={1} />
+            <Background color="#252525" gap={18} size={1} />
             <Controls className="!bg-bg-surface !border-border-subtle !fill-text-primary !rounded-sm" />
           </ReactFlow>
         </div>

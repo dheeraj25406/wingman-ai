@@ -4,16 +4,24 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "development"  # development | production | test
     PORT: int = 8000
     HOST: str = "0.0.0.0"
     CORS_ORIGINS: str = "http://localhost:5180,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5180"
 
+    # Security & Administration
+    ADMIN_API_KEY: str = ""  # Mandatory in production unless PUBLIC_DEMO_MODE=True
+    PUBLIC_DEMO_MODE: bool = False  # If True, enables safe public demo with controlled mutations
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_PER_MINUTE: int = 120
+    RATE_LIMIT_SENSITIVE_PER_MINUTE: int = 20
+
     # Gemini LLM Provider (Google Gen AI SDK)
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+    GEMINI_TIMEOUT_SECONDS: float = 15.0
 
-    # Database
+    # Database (PostgreSQL for production, SQLite for local standalone demo)
     DATABASE_URL: str = "sqlite+aiosqlite:///./wingman.db"
 
     # Observability

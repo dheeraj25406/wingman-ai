@@ -3,6 +3,7 @@ import logging
 import uuid
 import time
 from typing import Dict, Any, List
+from concurrent.futures import ThreadPoolExecutor
 from langgraph.graph import StateGraph, END
 
 from agent.state.investigation_state import InvestigationStateDict, HypothesisItem, HypothesisListResponse
@@ -42,14 +43,38 @@ def node_affected_service_id(state: InvestigationStateDict) -> Dict[str, Any]:
     }
 
 
+_diag_executor = ThreadPoolExecutor(max_workers=5)
+
+
 def node_investigation_planner(state: InvestigationStateDict) -> Dict[str, Any]:
-    """Node 4: Investigation Planner — Formulates bounded diagnostic query plan."""
-    return {"current_node": "INVESTIGATION_PLANNER"}
+    """Node 4: Investigation Planner — Formulates query plan and executes concurrent diagnostic prefetch."""
+    svc = state.primary_service_id
+    cat = state.predicted_category
+
+    # Optimization: Concurrent dispatch across all 5 diagnostic observability subsystems
+    f_metrics = _diag_executor.submit(diagnostic_tools.get_service_metrics, svc, 20)
+    f_logs = _diag_executor.submit(diagnostic_tools.search_logs, svc, "ERROR", None, 15)
+    f_traces = _diag_executor.submit(diagnostic_tools.get_recent_traces, svc, None, 5)
+    f_deploys = _diag_executor.submit(diagnostic_tools.get_recent_deployments, svc)
+    f_runbooks = _diag_executor.submit(runbook_rag.retrieve, f"{cat} {svc}", svc, 2)
+
+    prefetched = {
+        "metrics": f_metrics.result(),
+        "logs": f_logs.result(),
+        "traces": f_traces.result(),
+        "deploys": f_deploys.result(),
+        "runbooks": f_runbooks.result(),
+    }
+    return {
+        "current_node": "INVESTIGATION_PLANNER",
+        "prefetched_diagnostics": prefetched,
+    }
 
 
 def node_metrics_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
     """Node 5: Metrics Investigation — Collects time-series metrics via MCP tool."""
-    metrics_res = diagnostic_tools.get_service_metrics(state.primary_service_id, limit=20)
+    prefetched = state.prefetched_diagnostics or {}
+    metrics_res = prefetched.get("metrics") or diagnostic_tools.get_service_metrics(state.primary_service_id, limit=20)
     evidence_id = f"ev-metric-{uuid.uuid4().hex[:6]}"
 
     ev_item = {
@@ -69,7 +94,8 @@ def node_metrics_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
 
 def node_log_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
     """Node 6: Log Investigation — Searches error logs for exceptions and stack traces."""
-    logs_res = diagnostic_tools.search_logs(service_id=state.primary_service_id, level="ERROR", limit=15)
+    prefetched = state.prefetched_diagnostics or {}
+    logs_res = prefetched.get("logs") or diagnostic_tools.search_logs(service_id=state.primary_service_id, level="ERROR", limit=15)
     evidence_id = f"ev-log-{uuid.uuid4().hex[:6]}"
 
     top_logs = logs_res.get("logs", [])
@@ -92,10 +118,26 @@ def node_log_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
 
 def node_trace_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
     """Node 7: Trace Investigation — Inspects distributed traces for latency spikes and failed spans."""
-    recent_traces = diagnostic_tools.search_logs(service_id=state.primary_service_id, limit=5)
+    prefetched = state.prefetched_diagnostics or {}
+    recent_traces = prefetched.get("traces") or diagnostic_tools.get_recent_traces(service_id=state.primary_service_id, limit=5)
     evidence_id = f"ev-trace-{uuid.uuid4().hex[:6]}"
+    traces_list = recent_traces.get("traces", [])
+    error_trace = next((t for t in traces_list if t.get("has_error")), traces_list[0] if traces_list else None)
+
+    span_details = []
+    if error_trace and "trace_id" in error_trace:
+        full_trace = diagnostic_tools.get_trace(error_trace["trace_id"])
+        span_details = full_trace.get("spans", [])
+
     return {
-        "traces_evidence": [{"service_id": state.primary_service_id, "span_analysis": "Trace analysis completed"}],
+        "traces_evidence": [
+            {
+                "service_id": state.primary_service_id,
+                "traces_count": len(traces_list),
+                "error_trace_id": error_trace.get("trace_id") if error_trace else None,
+                "spans": span_details[:3],
+            }
+        ],
         "evidence_ids": state.evidence_ids + [evidence_id],
         "current_node": "TRACE_INVESTIGATION",
     }
@@ -103,7 +145,8 @@ def node_trace_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
 
 def node_deployment_investigation(state: InvestigationStateDict) -> Dict[str, Any]:
     """Node 8: Deployment Investigation — Correlates recent release and config changes."""
-    deploys_res = diagnostic_tools.get_recent_deployments(state.primary_service_id)
+    prefetched = state.prefetched_diagnostics or {}
+    deploys_res = prefetched.get("deploys") or diagnostic_tools.get_recent_deployments(state.primary_service_id)
     evidence_id = f"ev-deploy-{uuid.uuid4().hex[:6]}"
     return {
         "deployments_evidence": deploys_res.get("deployments", []),
@@ -114,8 +157,9 @@ def node_deployment_investigation(state: InvestigationStateDict) -> Dict[str, An
 
 def node_runbook_retrieval(state: InvestigationStateDict) -> Dict[str, Any]:
     """Node 9: Runbook Retrieval — Performs hybrid RAG retrieval for operational runbooks."""
+    prefetched = state.prefetched_diagnostics or {}
     query = f"{state.predicted_category} {state.primary_service_id}"
-    matched_runbooks = runbook_rag.retrieve(query=query, service_id=state.primary_service_id, top_k=2)
+    matched_runbooks = prefetched.get("runbooks") or runbook_rag.retrieve(query=query, service_id=state.primary_service_id, top_k=2)
     evidence_id = f"ev-rb-{uuid.uuid4().hex[:6]}"
     return {
         "retrieved_runbooks": matched_runbooks,
@@ -150,7 +194,22 @@ INSTRUCTIONS:
 1. Provide up to 3 ranked hypotheses explaining the root cause.
 2. Every hypothesis MUST cite at least one verified evidence ID from the provided list {state.evidence_ids}.
 3. DO NOT hallucinate nonexistent trace IDs or error messages.
-4. Recommend a safe, predefined remediation action (e.g., restart service, reset connection pool limit, rollback deployment).
+4. Recommend a safe, predefined remediation action (e.g., RESTART_SERVICE, RESET_CONNECTION_POOL, ROLLBACK_DEPLOYMENT, THROTTLE_TRAFFIC, DRAIN_QUEUE).
+
+FORMAT YOUR JSON RESPONSE EXACTLY AS:
+{{
+  "hypotheses": [
+    {{
+      "rank": 1,
+      "root_cause": "PostgreSQL database connection pool exhaustion",
+      "explanation": "Connection pool utilization reached 100%, causing query timeouts.",
+      "confidence_score": 0.95,
+      "supporting_evidence_ids": {json.dumps(state.evidence_ids[:2])},
+      "recommended_remediation": "RESET_CONNECTION_POOL"
+    }}
+  ],
+  "investigation_summary": "Summary of incident root cause and evidence."
+}}
 """
 
     hypotheses: List[HypothesisItem] = []

@@ -1,0 +1,10 @@
+Model,Stage,Features,Precision,Recall,F1_Score,False_Positive_Rate,Latency_p50_ms,Dataset_Note
+Isolation Forest,Baseline,13,1.0,0.9089,0.9523,0.0,3.0567,Synthetic Normal Split (525 pts)
+Isolation Forest,Optimized,16,1.0,0.9756,0.9876,0.0,3.0663,Synthetic Normal Split (525 pts)
+Static Threshold,Baseline,1,1.0,1.0,1.0,0.0,N/A,Synthetic Normal Split (525 pts)
+3-Sigma Z-Score,Baseline,1,0.9201,0.9978,0.9574,0.52,N/A,Synthetic Normal Split (525 pts)
+LightGBM Multi-class,Baseline,13,1.0,1.0,1.0,N/A,0.5226,Synthetic Canonical (GroupSplit)
+LightGBM Multi-class,Optimized,16,1.0,1.0,1.0,N/A,0.5839,Synthetic Canonical (GroupSplit)
+Dummy Majority,Baseline,0,0.0204,0.1429,0.0357,N/A,N/A,Synthetic Baseline
+Logistic Regression,Baseline,13,1.0,1.0,1.0,N/A,0.0003,Synthetic Canonical (GroupSplit)
+Random Forest,Baseline,13,1.0,1.0,1.0,N/A,0.026,Synthetic Canonical (GroupSplit)

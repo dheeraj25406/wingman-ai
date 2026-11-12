@@ -5,7 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
+from backend.app.core.security import SecurityMiddleware
 from backend.app.database.session import init_db
+from backend.app.api.incidents import sync_incidents_from_db
 from backend.app.api.health import router as health_router
 from backend.app.api.services import router as services_router
 from backend.app.api.metrics import router as metrics_router
@@ -30,10 +32,12 @@ logger = logging.getLogger("wingman.main")
 async def lifespan(app: FastAPI):
     logger.info("Initializing Wingman AI Production Platform...")
 
-    # Initialize Database tables
+    # Initialize Database schemas & synchronize incidents
     try:
         await init_db()
         logger.info("Database schemas verified.")
+        await sync_incidents_from_db()
+        logger.info("Incidents database synchronization completed.")
     except Exception as e:
         logger.warning(f"Database init notice: {e}")
 
@@ -74,6 +78,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enterprise Security Headers & Rate Limiting Middleware
+app.add_middleware(SecurityMiddleware)
 
 # Mount Routers
 app.include_router(health_router, prefix="/api")

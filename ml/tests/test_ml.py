@@ -24,27 +24,66 @@ def test_feature_extractor():
     vec = feature_extractor.extract_vector(sample_pt)
     assert isinstance(vec, np.ndarray)
     assert len(vec) == len(FEATURE_NAMES)
-    assert len(vec) == 13
+    assert len(vec) == 16
 
 
 def test_anomaly_detection_prediction():
     # Normal point vector
-    normal_vec = np.array([20.0, 30.0, 15.0, 0.001, 20.0, 45.0, 70.0, 15.0, 5.0, 0.0, 1.0, 0.0, 0.2])
+    normal_pt = {
+        "service_id": "checkout-service",
+        "cpu_utilization": 20.0,
+        "memory_utilization": 30.0,
+        "request_rate": 15.0,
+        "error_rate": 0.001,
+        "latency_p50": 20.0,
+        "latency_p95": 45.0,
+        "latency_p99": 70.0,
+        "db_connections": 15.0,
+        "queue_depth": 5.0,
+        "timeout_rate": 0.0,
+    }
+    normal_vec = feature_extractor.extract_vector(normal_pt)
     res_normal = anomaly_detector.predict_anomaly(normal_vec)
     assert "anomaly_score" in res_normal
     assert "is_anomaly" in res_normal
     assert isinstance(res_normal["abnormal_features"], list)
 
     # Extreme anomalous point vector
-    anom_vec = np.array([98.0, 95.0, 15.0, 0.85, 2500.0, 3800.0, 4500.0, 99.0, 100.0, 0.6, 3.5, 0.5, 8.5])
+    anom_pt = {
+        "service_id": "checkout-service",
+        "cpu_utilization": 98.0,
+        "memory_utilization": 95.0,
+        "request_rate": 15.0,
+        "error_rate": 0.85,
+        "latency_p50": 2500.0,
+        "latency_p95": 3800.0,
+        "latency_p99": 4500.0,
+        "db_connections": 99.0,
+        "queue_depth": 100.0,
+        "timeout_rate": 0.6,
+    }
+    anom_vec = feature_extractor.extract_vector(anom_pt)
     res_anom = anomaly_detector.predict_anomaly(anom_vec)
     assert res_anom["is_anomaly"] is True
     assert res_anom["anomaly_score"] > 0.5
 
 
 def test_incident_classification_prediction():
-    # DB pool exhaustion vector
-    db_vec = np.array([25.0, 35.0, 15.0, 0.70, 1500.0, 2800.0, 3500.0, 99.0, 10.0, 0.4, 1.0, 0.3, 6.0])
+    # DB pool exhaustion point
+    db_pt = {
+        "service_id": "checkout-service",
+        "cpu_utilization": 25.0,
+        "memory_utilization": 35.0,
+        "request_rate": 15.0,
+        "error_rate": 0.70,
+        "latency_p50": 1500.0,
+        "latency_p95": 2800.0,
+        "latency_p99": 3500.0,
+        "db_connections": 99.0,
+        "queue_depth": 10.0,
+        "timeout_rate": 0.4,
+    }
+    db_vec = feature_extractor.extract_vector(db_pt)
     res = incident_classifier.predict(db_vec)
     assert res["predicted_class"] == "DB_POOL_EXHAUSTION"
     assert res["confidence"] > 0.8

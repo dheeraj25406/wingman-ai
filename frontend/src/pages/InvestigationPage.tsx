@@ -110,7 +110,7 @@ export const InvestigationPage: React.FC = () => {
               <button
                 onClick={() => investigateMutation.mutate()}
                 disabled={investigateMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-sm bg-text-primary text-bg-app text-xs font-medium hover:bg-white transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-sm bg-accent text-bg-app text-xs font-medium hover:brightness-110 transition-all disabled:opacity-50"
               >
                 <Sparkles size={12} className={investigateMutation.isPending ? 'animate-spin' : ''} />
                 <span>{investigateMutation.isPending ? 'Executing LangGraph...' : 'Investigate Incident'}</span>
@@ -217,16 +217,16 @@ export const InvestigationPage: React.FC = () => {
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="invMono" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#EAE8E3" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#EAE8E3" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#F2F2F2" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#F2F2F2" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
-                    <YAxis stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
+                    <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
+                    <YAxis stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#111111', borderColor: '#252525', borderRadius: '3px', fontSize: '11px', color: '#EAE8E3' }}
+                      contentStyle={{ backgroundColor: '#111111', borderColor: '#303030', borderRadius: '3px', fontSize: '11px', color: '#F2F2F2' }}
                     />
-                    <Area type="monotone" dataKey="p95" stroke="#EAE8E3" strokeWidth={1.25} fill="url(#invMono)" />
+                    <Area type="monotone" dataKey="p95" stroke="#F2F2F2" strokeWidth={1.25} fill="url(#invMono)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -351,7 +351,9 @@ export const InvestigationPage: React.FC = () => {
                 <span className="text-xs font-medium text-text-primary uppercase tracking-wider font-mono">
                   Ranked Root-Cause Hypotheses
                 </span>
-                <span className="text-[10px] font-mono text-text-muted">Gemini 3.5 Flash-Lite</span>
+                <span className="text-[10px] font-mono text-text-muted px-1.5 py-0.5 rounded-sm bg-bg-surface border border-border-subtle">
+                  Gemini 3.5 Flash-Lite
+                </span>
               </div>
 
               <div className="space-y-3">

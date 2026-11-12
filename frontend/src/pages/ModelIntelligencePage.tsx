@@ -191,12 +191,12 @@ export const ModelIntelligencePage: React.FC = () => {
           <div className="h-48 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={featureImpData.slice(0, 8)} layout="vertical">
-                <XAxis type="number" stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#252525" tick={{ fill: '#A09E98', fontSize: 10 }} tickLine={false} width={160} />
+                <XAxis type="number" stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
+                <YAxis dataKey="name" type="category" stroke="#252525" tick={{ fill: '#BDBDBD', fontSize: 10 }} tickLine={false} width={160} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#111111', borderColor: '#252525', borderRadius: '3px', fontSize: '11px', color: '#EAE8E3' }}
+                  contentStyle={{ backgroundColor: '#111111', borderColor: '#303030', borderRadius: '3px', fontSize: '11px', color: '#F2F2F2' }}
                 />
-                <Bar dataKey="importance" fill="#EAE8E3" radius={[0, 2, 2, 0]} />
+                <Bar dataKey="importance" fill="#BDBDBD" radius={[0, 2, 2, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

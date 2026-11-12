@@ -1,0 +1,354 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-12T11:51:07Z",
+    "total_trials": 30,
+    "scenarios_tested": [
+      "db_pool_exhaustion",
+      "cpu_saturation",
+      "memory_pressure",
+      "downstream_failure",
+      "queue_backlog",
+      "bad_deployment"
+    ]
+  },
+  "metrics": {
+    "remediation_success_rate": 1.0,
+    "remediation_failure_rate": 0.0,
+    "false_recovery_rate": 0.0,
+    "mean_time_to_recovery_seconds": 9.46,
+    "mttr_p50_seconds": 7.84,
+    "mttr_p95_seconds": 18.48
+  },
+  "trials": [
+    {
+      "trial_id": 1,
+      "scenario": "db_pool_exhaustion",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-db_p-1-b686",
+      "proposed_action": "RESET_CONNECTION_POOL",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 13.19
+    },
+    {
+      "trial_id": 2,
+      "scenario": "db_pool_exhaustion",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-db_p-2-1157",
+      "proposed_action": "RESET_CONNECTION_POOL",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 6.64
+    },
+    {
+      "trial_id": 3,
+      "scenario": "db_pool_exhaustion",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-db_p-3-0d55",
+      "proposed_action": "RESET_CONNECTION_POOL",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 12.78
+    },
+    {
+      "trial_id": 4,
+      "scenario": "db_pool_exhaustion",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-db_p-4-f2d0",
+      "proposed_action": "RESET_CONNECTION_POOL",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 14.35
+    },
+    {
+      "trial_id": 5,
+      "scenario": "db_pool_exhaustion",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-db_p-5-4a0d",
+      "proposed_action": "RESET_CONNECTION_POOL",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 16.02
+    },
+    {
+      "trial_id": 6,
+      "scenario": "cpu_saturation",
+      "target_service": "checkout-service",
+      "incident_id": "inc-bench-cpu_-6-2480",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.42
+    },
+    {
+      "trial_id": 7,
+      "scenario": "cpu_saturation",
+      "target_service": "checkout-service",
+      "incident_id": "inc-bench-cpu_-7-60f7",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 5.53
+    },
+    {
+      "trial_id": 8,
+      "scenario": "cpu_saturation",
+      "target_service": "checkout-service",
+      "incident_id": "inc-bench-cpu_-8-abed",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 7.15
+    },
+    {
+      "trial_id": 9,
+      "scenario": "cpu_saturation",
+      "target_service": "checkout-service",
+      "incident_id": "inc-bench-cpu_-9-0827",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 15.54
+    },
+    {
+      "trial_id": 10,
+      "scenario": "cpu_saturation",
+      "target_service": "checkout-service",
+      "incident_id": "inc-bench-cpu_-10-ff9d",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 15.73
+    },
+    {
+      "trial_id": 11,
+      "scenario": "memory_pressure",
+      "target_service": "product-service",
+      "incident_id": "inc-bench-memo-11-2402",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 4.62
+    },
+    {
+      "trial_id": 12,
+      "scenario": "memory_pressure",
+      "target_service": "product-service",
+      "incident_id": "inc-bench-memo-12-26c7",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 10.45
+    },
+    {
+      "trial_id": 13,
+      "scenario": "memory_pressure",
+      "target_service": "product-service",
+      "incident_id": "inc-bench-memo-13-7e7b",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.83
+    },
+    {
+      "trial_id": 14,
+      "scenario": "memory_pressure",
+      "target_service": "product-service",
+      "incident_id": "inc-bench-memo-14-2640",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.18
+    },
+    {
+      "trial_id": 15,
+      "scenario": "memory_pressure",
+      "target_service": "product-service",
+      "incident_id": "inc-bench-memo-15-f1d6",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 13.84
+    },
+    {
+      "trial_id": 16,
+      "scenario": "downstream_failure",
+      "target_service": "payment-service",
+      "incident_id": "inc-bench-down-16-dbfd",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 20.79
+    },
+    {
+      "trial_id": 17,
+      "scenario": "downstream_failure",
+      "target_service": "payment-service",
+      "incident_id": "inc-bench-down-17-1414",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 6.61
+    },
+    {
+      "trial_id": 18,
+      "scenario": "downstream_failure",
+      "target_service": "payment-service",
+      "incident_id": "inc-bench-down-18-e169",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 7.31
+    },
+    {
+      "trial_id": 19,
+      "scenario": "downstream_failure",
+      "target_service": "payment-service",
+      "incident_id": "inc-bench-down-19-3eb9",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 7.47
+    },
+    {
+      "trial_id": 20,
+      "scenario": "downstream_failure",
+      "target_service": "payment-service",
+      "incident_id": "inc-bench-down-20-895a",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.08
+    },
+    {
+      "trial_id": 21,
+      "scenario": "queue_backlog",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-queu-21-da3d",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 7.7
+    },
+    {
+      "trial_id": 22,
+      "scenario": "queue_backlog",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-queu-22-4f27",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 11.18
+    },
+    {
+      "trial_id": 23,
+      "scenario": "queue_backlog",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-queu-23-1856",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 5.02
+    },
+    {
+      "trial_id": 24,
+      "scenario": "queue_backlog",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-queu-24-4e5a",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 20.49
+    },
+    {
+      "trial_id": 25,
+      "scenario": "queue_backlog",
+      "target_service": "order-service",
+      "incident_id": "inc-bench-queu-25-0c4d",
+      "proposed_action": "RESTART_SERVICE",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.9
+    },
+    {
+      "trial_id": 26,
+      "scenario": "bad_deployment",
+      "target_service": "user-service",
+      "incident_id": "inc-bench-bad_-26-4e54",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 7.98
+    },
+    {
+      "trial_id": 27,
+      "scenario": "bad_deployment",
+      "target_service": "user-service",
+      "incident_id": "inc-bench-bad_-27-2045",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 14.74
+    },
+    {
+      "trial_id": 28,
+      "scenario": "bad_deployment",
+      "target_service": "user-service",
+      "incident_id": "inc-bench-bad_-28-b85e",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 12.38
+    },
+    {
+      "trial_id": 29,
+      "scenario": "bad_deployment",
+      "target_service": "user-service",
+      "incident_id": "inc-bench-bad_-29-f1d2",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 2.44
+    },
+    {
+      "trial_id": 30,
+      "scenario": "bad_deployment",
+      "target_service": "user-service",
+      "incident_id": "inc-bench-bad_-30-cc2a",
+      "proposed_action": "ROLLBACK_DEPLOYMENT",
+      "final_status": "RESOLVED",
+      "recovery_verified": true,
+      "false_recovery": false,
+      "recovery_time_seconds": 11.36
+    }
+  ]
+}

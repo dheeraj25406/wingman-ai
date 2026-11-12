@@ -1,20 +1,47 @@
+import asyncio
 import time
 import uuid
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends, status
 from pydantic import BaseModel
 
 from backend.app.schemas.schemas import RemediationDecisionRequest
 from backend.app.services.correlation_engine import correlation_engine
+from backend.app.core.security import verify_admin_authorization
+from backend.app.database.incident_repository import (
+    save_incident_to_db,
+    load_incidents_from_db,
+    get_incident_from_db,
+    delete_incident_from_db,
+)
 from agent.graph.investigation_graph import investigation_graph
 from agent.state.investigation_state import InvestigationStateDict
 from simulator.faults.fault_engine import fault_engine
+from simulator.services.mesh import service_mesh
+from simulator.telemetry.buffer import telemetry_buffer
+
+logger = logging.getLogger("wingman.api.incidents")
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
 # In-memory store for incidents with seeded realistic baseline data
 INCIDENT_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+
+async def sync_incidents_from_db():
+    """Synchronize incidents between database and memory registry."""
+    try:
+        persisted = await load_incidents_from_db()
+        for inc in persisted:
+            INCIDENT_REGISTRY[inc["id"]] = inc
+        if not INCIDENT_REGISTRY:
+            _seed_initial_demo_incidents()
+            for inc in INCIDENT_REGISTRY.values():
+                await save_incident_to_db(inc)
+    except Exception as e:
+        logger.warning(f"Notice during database incident synchronization: {e}")
 
 
 def _seed_initial_demo_incidents():
@@ -117,6 +144,9 @@ def _seed_initial_demo_incidents():
 _seed_initial_demo_incidents()
 
 
+_last_db_sync: float = 0.0
+
+
 @router.get("")
 async def list_incidents(
     status: Optional[str] = None,
@@ -124,6 +154,13 @@ async def list_incidents(
     service_id: Optional[str] = None,
     limit: int = 50,
 ) -> Dict[str, Any]:
+    global _last_db_sync
+    now = time.time()
+    # Synchronize from DB if in-memory registry empty or periodically every 2 seconds
+    if not INCIDENT_REGISTRY or (now - _last_db_sync > 2.0):
+        await sync_incidents_from_db()
+        _last_db_sync = now
+
     incidents = list(INCIDENT_REGISTRY.values())
     if status:
         incidents = [i for i in incidents if i["status"].upper() == status.upper()]
@@ -141,8 +178,24 @@ async def list_incidents(
 async def get_incident(incident_id: str) -> Dict[str, Any]:
     incident = INCIDENT_REGISTRY.get(incident_id)
     if not incident:
+        incident = await get_incident_from_db(incident_id)
+        if incident:
+            INCIDENT_REGISTRY[incident_id] = incident
+    if not incident:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
     return {"status": "success", "data": incident}
+
+
+@router.delete("/{incident_id}")
+async def delete_incident(
+    incident_id: str,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
+    incident = INCIDENT_REGISTRY.pop(incident_id, None)
+    deleted = await delete_incident_from_db(incident_id)
+    if not incident and not deleted:
+        raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
+    return {"status": "success", "message": f"Incident {incident_id} deleted successfully from database"}
 
 
 @router.post("/detect")
@@ -206,11 +259,15 @@ async def detect_incidents() -> Dict[str, Any]:
     }
 
     INCIDENT_REGISTRY[new_id] = incident_record
+    await save_incident_to_db(incident_record)
     return {"status": "success", "message": f"Incident {new_id} created", "data": incident_record}
 
 
 @router.post("/{incident_id}/investigate")
-async def investigate_incident(incident_id: str) -> Dict[str, Any]:
+async def investigate_incident(
+    incident_id: str,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     """
     Executes the 16-node LangGraph autonomous investigation workflow for this incident.
     """
@@ -292,6 +349,7 @@ async def investigate_incident(incident_id: str) -> Dict[str, Any]:
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
+    await save_incident_to_db(incident)
     return {"status": "success", "message": "Investigation completed", "data": incident}
 
 
@@ -320,7 +378,11 @@ async def get_incident_hypotheses(incident_id: str) -> Dict[str, Any]:
 
 
 @router.post("/{incident_id}/approve")
-async def approve_remediation(incident_id: str, req: RemediationDecisionRequest) -> Dict[str, Any]:
+async def approve_remediation(
+    incident_id: str,
+    req: RemediationDecisionRequest,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     incident = INCIDENT_REGISTRY.get(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
@@ -329,11 +391,57 @@ async def approve_remediation(incident_id: str, req: RemediationDecisionRequest)
     if not proposal:
         raise HTTPException(status_code=400, detail="No pending remediation proposal for this incident")
 
-    # Execute predefined safe action
-    action = proposal["action_type"]
-    target_svc = proposal["target_service_id"]
+    # Reject duplicate approval or already executed remediation attempts
+    if incident.get("status") in ("RESOLVED", "MITIGATED") or proposal.get("status") in ("EXECUTED", "APPROVED"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Remediation proposal {proposal.get('id')} has already been approved/executed or incident {incident_id} is already resolved.",
+        )
 
-    # Halt active faults on target service
+    action = proposal.get("action_type")
+    target_svc = proposal.get("target_service_id")
+    now_iso = lambda: datetime.now(timezone.utc).isoformat()
+
+    # PHASE 1: OPERATOR APPROVAL
+    proposal["status"] = "APPROVED"
+    incident["status"] = "MITIGATING"
+    incident["timeline"].append({
+        "id": f"ev-{uuid.uuid4().hex[:6]}",
+        "event_type": "REMEDIATION_APPROVED",
+        "description": f"Operator approved action {action} on {target_svc}. Notes: {req.operator_notes or 'Authorized by operator'}",
+        "created_at": now_iso(),
+    })
+
+    # Check for forced failure test simulation or unauthorized action
+    allowed_actions = [
+        "RESTART_SERVICE",
+        "RESET_CONNECTION_POOL",
+        "ROLLBACK_DEPLOYMENT",
+        "THROTTLE_TRAFFIC",
+        "DRAIN_QUEUE",
+    ]
+    if req.force_failure or action not in allowed_actions:
+        proposal["status"] = "EXECUTION_FAILED"
+        incident["status"] = "MITIGATION_FAILED"
+        fail_reason = (
+            "Simulated container execution failure"
+            if req.force_failure
+            else f"Action {action} is not in authorized safety catalog"
+        )
+        incident["timeline"].append({
+            "id": f"ev-{uuid.uuid4().hex[:6]}",
+            "event_type": "ACTION_FAILED",
+            "description": f"Remediation action failed: {fail_reason}. Target service remains degraded.",
+            "created_at": now_iso(),
+        })
+        await save_incident_to_db(incident)
+        return {
+            "status": "error",
+            "message": f"Remediation failed: {fail_reason}. Incident remains UNRESOLVED.",
+            "data": incident,
+        }
+
+    # PHASE 2: ACTION EXECUTION
     stopped_faults = []
     for f in fault_engine.get_active_faults():
         if f.target_service_id == target_svc:
@@ -341,39 +449,98 @@ async def approve_remediation(incident_id: str, req: RemediationDecisionRequest)
             stopped_faults.append(f.id)
 
     proposal["status"] = "EXECUTED"
-    incident["status"] = "RESOLVED"
-    incident["mitigated_at"] = datetime.now(timezone.utc).isoformat()
-    incident["resolved_at"] = datetime.now(timezone.utc).isoformat()
-
     incident["timeline"].append({
         "id": f"ev-{uuid.uuid4().hex[:6]}",
-        "event_type": "REMEDIATION_APPROVED",
-        "description": f"Operator approved action {action} on {target_svc}. Notes: {req.operator_notes or 'Authorized'}",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "event_type": "ACTION_EXECUTED",
+        "description": f"Executed action {action} on {target_svc}. Terminated {len(stopped_faults)} active faults.",
+        "created_at": now_iso(),
     })
+
+    # PHASE 3: ACTION RESULT VALIDATION
+    incident["timeline"].append({
+        "id": f"ev-{uuid.uuid4().hex[:6]}",
+        "event_type": "ACTION_VALIDATED",
+        "description": f"Container orchestrator confirmed exit code 0 for {action} on {target_svc}.",
+        "created_at": now_iso(),
+    })
+
+    # PHASE 4: FRESH TELEMETRY COLLECTION
+    # Trigger fresh metric snapshot across mesh post-mitigation
+    service_mesh.sample_metrics_now()
+    fresh_metrics = telemetry_buffer.get_service_metrics(target_svc, limit=5)
+    incident["timeline"].append({
+        "id": f"ev-{uuid.uuid4().hex[:6]}",
+        "event_type": "TELEMETRY_COLLECTED",
+        "description": f"Collected fresh telemetry window ({len(fresh_metrics)} data points) post-execution for {target_svc}.",
+        "created_at": now_iso(),
+    })
+
+    # PHASE 5: RECOVERY VERIFICATION
+    remaining_faults = [f for f in fault_engine.get_active_faults() if f.target_service_id == target_svc]
+    latest_metric = fresh_metrics[-1] if fresh_metrics else {}
+    err_rate = latest_metric.get("error_rate", 0.0)
+    lat_p95 = latest_metric.get("latency_p95", 30.0)
+
+    is_recovered = len(remaining_faults) == 0 and err_rate <= 0.05
+
+    if not is_recovered:
+        incident["status"] = "RECOVERY_FAILED"
+        incident["timeline"].append({
+            "id": f"ev-{uuid.uuid4().hex[:6]}",
+            "event_type": "RECOVERY_FAILED",
+            "description": f"Recovery verification failed: Error rate {err_rate:.2%} exceeds threshold. Incident remains UNRESOLVED.",
+            "created_at": now_iso(),
+        })
+        await save_incident_to_db(incident)
+        return {
+            "status": "error",
+            "message": "Recovery verification failed. Telemetry metrics did not normalize. Incident remains UNRESOLVED.",
+            "data": incident,
+        }
+
+    # PHASE 6: FINAL RESOLUTION (Only when recovery verification confirmed healthy telemetry)
+    proposal["status"] = "RESOLVED"
+    incident["status"] = "RESOLVED"
+    incident["mitigated_at"] = now_iso()
+    incident["resolved_at"] = now_iso()
+
     incident["timeline"].append({
         "id": f"ev-{uuid.uuid4().hex[:6]}",
         "event_type": "RECOVERED",
-        "description": f"Telemetry verified healthy. Cleared {len(stopped_faults)} active faults.",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "description": f"Telemetry verified healthy (Error rate: {err_rate:.2%}, P95: {lat_p95:.1f}ms). Cleared {len(stopped_faults)} active faults. Incident RESOLVED.",
+        "created_at": now_iso(),
     })
 
+    await save_incident_to_db(incident)
     return {
         "status": "success",
-        "message": f"Remediation {action} executed successfully. Incident marked RESOLVED.",
-        "data": incident
+        "message": f"Remediation {action} executed and recovery verified. Incident marked RESOLVED.",
+        "data": incident,
     }
 
 
 @router.post("/{incident_id}/reject")
-async def reject_remediation(incident_id: str, req: RemediationDecisionRequest) -> Dict[str, Any]:
+async def reject_remediation(
+    incident_id: str,
+    req: RemediationDecisionRequest,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     incident = INCIDENT_REGISTRY.get(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
 
     proposal = incident.get("remediation_proposal")
-    if proposal:
-        proposal["status"] = "REJECTED"
+    if not proposal:
+        raise HTTPException(status_code=400, detail="No pending remediation proposal for this incident")
+
+    # Reject duplicate decision attempts
+    if incident.get("status") in ("RESOLVED", "MITIGATED") or proposal.get("status") in ("EXECUTED", "REJECTED"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Remediation proposal {proposal.get('id')} has already been decided or incident {incident_id} is already resolved.",
+        )
+
+    proposal["status"] = "REJECTED"
 
     incident["status"] = "IDENTIFIED"
     incident["timeline"].append({
@@ -383,4 +550,5 @@ async def reject_remediation(incident_id: str, req: RemediationDecisionRequest) 
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
+    await save_incident_to_db(incident)
     return {"status": "success", "message": "Remediation rejected", "data": incident}

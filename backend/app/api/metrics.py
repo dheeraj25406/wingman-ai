@@ -1,18 +1,27 @@
 from fastapi import APIRouter, Query
 from typing import Dict, Any
+import time
 
 from simulator.telemetry.buffer import telemetry_buffer
 from backend.app.services.correlation_engine import SERVICE_DEPENDENCY_GRAPH
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
 
+_overview_cache: Dict[str, Any] = {}
+_overview_cache_ts: float = 0.0
+
 
 @router.get("/overview")
 async def get_metrics_overview() -> Dict[str, Any]:
+    global _overview_cache, _overview_cache_ts
+    now = time.time()
+    if _overview_cache and (now - _overview_cache_ts < 0.5):
+        return _overview_cache
+
     latest = telemetry_buffer.get_all_latest_metrics()
     total = len(latest)
     if total == 0:
-        return {
+        res = {
             "status": "success",
             "data": {
                 "total_services": 6,
@@ -25,6 +34,9 @@ async def get_metrics_overview() -> Dict[str, Any]:
                 "active_incidents_count": 0,
             }
         }
+        _overview_cache = res
+        _overview_cache_ts = now
+        return res
 
     err_sum = sum(m.get("error_rate", 0.0) for m in latest.values())
     p95_sum = sum(m.get("latency_p95", 0.0) for m in latest.values())
@@ -34,7 +46,7 @@ async def get_metrics_overview() -> Dict[str, Any]:
     degraded_count = sum(1 for m in latest.values() if (0.05 < m.get("error_rate", 0.0) <= 0.4) or (500.0 < m.get("latency_p95", 0.0) <= 1500.0))
     healthy_count = total - critical_count - degraded_count
 
-    return {
+    res = {
         "status": "success",
         "data": {
             "total_services": total,
@@ -47,6 +59,9 @@ async def get_metrics_overview() -> Dict[str, Any]:
             "active_incidents_count": critical_count,
         }
     }
+    _overview_cache = res
+    _overview_cache_ts = now
+    return res
 
 
 @router.get("/services/{service_id}")

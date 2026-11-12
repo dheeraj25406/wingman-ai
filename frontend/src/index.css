@@ -5,19 +5,41 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --bg-primary: #090909;
+    --bg-sidebar: #0D0D0D;
+    --bg-surface: #111111;
+    --bg-secondary: #191919;
+    --bg-elevated: #222222;
+    --bg-hover: #292929;
+
+    --border-subtle: #252525;
+    --border-normal: #303030;
+    --border-strong: #404040;
+
+    --text-primary: #F2F2F2;
+    --text-secondary: #BDBDBD;
+    --text-muted: #858585;
+    --text-disabled: #5C5C5C;
+
+    --status-healthy: #79B68A;
+    --status-warning: #D9A65F;
+    --status-critical: #D96C6C;
   }
 
-  body {
-    background-color: #090909;
-    color: #EAE8E3;
+  html,
+  body,
+  #root {
+    background-color: #090909 !important;
+    color: #F2F2F2;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     letter-spacing: -0.011em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
   }
 }
 
-/* Monochromatic hair-line scrollbars */
+/* Hair-line scrollbars using the pure black & greyscale palette */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -33,11 +55,11 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #353535;
+  background: #303030;
 }
 
-/* Subtle focus outlines */
+/* Focus outlines */
 *:focus-visible {
-  outline: 1px solid #AAA69E;
+  outline: 1px solid #F2F2F2;
   outline-offset: 1px;
 }

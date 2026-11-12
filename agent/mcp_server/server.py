@@ -25,6 +25,12 @@ def search_logs(service_id: Optional[str] = None, level: Optional[str] = None, q
 
 
 @mcp_server.tool()
+def get_recent_traces(service_id: Optional[str] = None, has_error: Optional[bool] = None, limit: int = 10) -> Dict[str, Any]:
+    """Fetches recent distributed trace summaries filtered by service or error presence."""
+    return diagnostic_tools.get_recent_traces(service_id=service_id, has_error=has_error, limit=limit)
+
+
+@mcp_server.tool()
 def get_trace(trace_id: str) -> Dict[str, Any]:
     """Fetches full distributed trace spans, parent-child relationships, status codes, and error messages for a trace ID."""
     return diagnostic_tools.get_trace(trace_id)

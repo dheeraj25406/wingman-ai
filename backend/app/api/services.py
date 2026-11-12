@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
+import time
 
 from simulator.telemetry.buffer import telemetry_buffer
 from backend.app.services.correlation_engine import SERVICE_DEPENDENCY_GRAPH
@@ -7,9 +8,17 @@ from simulator.faults.fault_engine import fault_engine
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
+_services_cache: Dict[str, Any] = {}
+_services_cache_ts: float = 0.0
+
 
 @router.get("")
 async def list_services() -> Dict[str, Any]:
+    global _services_cache, _services_cache_ts
+    now = time.time()
+    if _services_cache and (now - _services_cache_ts < 0.5):
+        return _services_cache
+
     latest = telemetry_buffer.get_all_latest_metrics()
     services_list = []
 
@@ -42,7 +51,10 @@ async def list_services() -> Dict[str, Any]:
             }
         })
 
-    return {"status": "success", "data": services_list}
+    res = {"status": "success", "data": services_list}
+    _services_cache = res
+    _services_cache_ts = now
+    return res
 
 
 @router.get("/{service_id}")

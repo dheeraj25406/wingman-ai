@@ -103,7 +103,7 @@ export const Sidebar: React.FC = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-status-sage" />
             <span className="text-text-secondary text-[11px] font-mono">Telemetry Active</span>
           </div>
-          <span className="text-text-muted text-[10px] font-mono">0.0.0.0:8008</span>
+          <span className="text-text-muted text-[10px] font-mono">Simulated Mesh</span>
         </div>
       </div>
     </aside>

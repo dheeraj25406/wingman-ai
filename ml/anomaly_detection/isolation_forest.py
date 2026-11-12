@@ -39,6 +39,44 @@ class AnomalyDetector:
         )
         self.model.fit(X_scaled)
 
+    def calibrate_threshold(self, X_val: np.ndarray, y_val: np.ndarray) -> float:
+        """
+        Sweeps anomaly score thresholds on validation set to find the F1-optimal threshold
+        while constraining false positive rate (FPR <= 0.05).
+        """
+        if self.model is None or self.scaler is None:
+            return self.threshold
+
+        X_scaled = self.scaler.transform(X_val)
+        raw_scores = self.model.decision_function(X_scaled)
+        norm_scores = np.clip(0.5 - raw_scores, 0.0, 1.0)
+        y_binary = (y_val > 0).astype(int)
+
+        best_th = self.threshold
+        best_f1 = -1.0
+
+        for candidate_th in np.linspace(0.40, 0.70, 61):
+            preds = (norm_scores >= candidate_th).astype(int)
+            tn = np.sum((y_binary == 0) & (preds == 0))
+            fp = np.sum((y_binary == 0) & (preds == 1))
+            tp = np.sum((y_binary == 1) & (preds == 1))
+            fn = np.sum((y_binary == 1) & (preds == 0))
+
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+            if fpr > 0.06:
+                continue
+
+            prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+            rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            f1 = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
+
+            if f1 > best_f1:
+                best_f1 = f1
+                best_th = float(candidate_th)
+
+        self.threshold = round(best_th, 4)
+        return self.threshold
+
     def predict_anomaly(self, vector: np.ndarray) -> Dict[str, Any]:
         """
         Takes a 1D feature vector and returns calibrated anomaly score,

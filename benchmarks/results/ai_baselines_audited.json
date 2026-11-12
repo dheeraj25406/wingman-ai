@@ -1,0 +1,57 @@
+{
+  "static_rule_audited": {
+    "model": "Static Rule-Based Baseline (Observable Signals Only)",
+    "trials": 6,
+    "accuracy": 0.8333,
+    "label_leakage_prevented": true,
+    "latency_p50_ms": 0.0005
+  },
+  "single_shot_gemini_audited": {
+    "model": "Single-Shot Unstructured Gemini 3.5 Flash-Lite",
+    "trials": 6,
+    "accuracy": 0.8333,
+    "latency_ms": {
+      "mean": 1794.3,
+      "p50": 1341.7,
+      "p95": 3139.8
+    },
+    "cases": [
+      {
+        "scenario": "Order Service DB Pool Starvation",
+        "match": true,
+        "latency_ms": 1156.3239169990993,
+        "output": "The probable root cause is a database connection pool exhaustion in the `order-service`, driven by an abnormal spike of 99 active connections (4.5 standard deviations above normal), which is cascading failures upstream to the `checkout-service` and `api-gateway`."
+      },
+      {
+        "scenario": "Checkout Service CPU Throttling",
+        "match": false,
+        "latency_ms": 3342.802582999866,
+        "output": "The probable root cause is a severe CPU saturation on the `checkout-service` (reaching 98.0 utilization), which is cascading and impacting upstream traffic through the `api-gateway`."
+      },
+      {
+        "scenario": "Payment Service 503 Provider Outage",
+        "match": true,
+        "latency_ms": 1124.0835829994467,
+        "output": "A severe downstream API failure (85% error rate, 5.1 sigma deviation) in the payment-service is propagating failures upward to the checkout-service and api-gateway."
+      },
+      {
+        "scenario": "Product Service Memory Leak GC Pressure",
+        "match": true,
+        "latency_ms": 1084.4012500019744,
+        "output": "The probable root cause is a severe memory leak or resource exhaustion in the `product-service`, leading to high memory utilization (96%) and triggering cascading performance degradation in the `api-gateway`."
+      },
+      {
+        "scenario": "User Service Bad Deployment Regression",
+        "match": true,
+        "latency_ms": 1527.080832998763,
+        "output": "The probable root cause of the incident is a recent deployment regression that caused the error rate in the user-service to spike by 5.4 standard deviations."
+      },
+      {
+        "scenario": "Order Service Queue Depth Surge",
+        "match": true,
+        "latency_ms": 2530.9893330013438,
+        "output": "The probable root cause is a severe message queue backlog of 12,000 items in the `order-service` queue, indicating that consumer processing has stalled or cannot keep up with incoming message volume, propagating strain to the `checkout-service`."
+      }
+    ]
+  }
+}

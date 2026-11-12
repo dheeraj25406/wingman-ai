@@ -17,13 +17,16 @@ FEATURE_NAMES = [
     "cpu_rolling_mean_ratio",
     "error_rate_delta",
     "latency_baseline_zscore",
+    "latency_dispersion_ratio",
+    "error_throughput_volume",
+    "saturation_pressure_index",
 ]
 
 
 class FeatureExtractor:
     """
-    Transforms raw telemetry time-series points into normalized, 13-dimensional
-    feature vectors with rolling statistics and deviation measures.
+    Transforms raw telemetry time-series points into normalized, 16-dimensional
+    feature vectors with rolling statistics, cross-metric interaction terms, and deviation measures.
     """
 
     DEFAULT_BASELINES = {
@@ -66,6 +69,11 @@ class FeatureExtractor:
         baseline = self.DEFAULT_BASELINES.get(service_id, {"p95_mean": 50.0, "p95_std": 10.0})
         p95_zscore = (p95 - baseline["p95_mean"]) / (baseline["p95_std"] + 1e-4)
 
+        # Cross-metric interaction features
+        dispersion_ratio = p95 / (p50 + 1e-4)
+        error_volume = err * rps
+        saturation_index = (db_conn / 100.0) * (queue / 1000.0)
+
         vector = [
             cpu,
             mem,
@@ -80,6 +88,9 @@ class FeatureExtractor:
             cpu_ratio,
             err_delta,
             p95_zscore,
+            dispersion_ratio,
+            error_volume,
+            saturation_index,
         ]
         return np.array(vector, dtype=np.float32)
 

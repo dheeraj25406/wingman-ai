@@ -68,8 +68,18 @@ export const api = {
   runEvaluation: (casesCount: number = 24) =>
     fetchApi<any>('/evaluations/run', { method: 'POST', body: JSON.stringify({ cases_count: casesCount }) }),
 
-  // Settings
+  // Settings & System Configuration
   getSettings: () => fetchApi<any>('/settings/integrations'),
+  testGemini: () => fetchApi<any>('/settings/test-gemini', { method: 'POST' }),
+  updateApiKey: (apiKey: string) =>
+    fetchApi<any>('/settings/api-key', { method: 'POST', body: JSON.stringify({ api_key: apiKey }) }),
   getTraffic: () => fetchApi<any>('/settings/traffic'),
-  updateTraffic: (rps: number) => fetchApi<any>('/settings/traffic', { method: 'POST', body: JSON.stringify({ rps }) }),
+  updateTraffic: (rps: number) =>
+    fetchApi<any>('/settings/traffic', { method: 'POST', body: JSON.stringify({ rps }) }),
+  toggleTraffic: () => fetchApi<any>('/settings/traffic/toggle', { method: 'POST' }),
+  getSafety: () => fetchApi<any>('/settings/safety'),
+  updateSafety: (cfg: { human_approval_required: boolean; max_remediations_per_hour: number; allowed_actions: string[] }) =>
+    fetchApi<any>('/settings/safety', { method: 'POST', body: JSON.stringify(cfg) }),
+  getDiagnostics: () => fetchApi<any>('/settings/system-diagnostics'),
+  resetDemo: () => fetchApi<any>('/settings/reset-demo', { method: 'POST' }),
 };

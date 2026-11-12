@@ -1,0 +1,82 @@
+{
+  "gemini_metadata": {
+    "model_version": "gemini-3.5-flash-lite",
+    "prompt_tokens": 306,
+    "candidates_tokens": 226,
+    "total_tokens": 532,
+    "duration_seconds": 1.347,
+    "prompt_length_chars": 993,
+    "response_length_chars": 796,
+    "raw_response": "{\n  \"incident_id\": \"inc-verify-db\",\n  \"primary_service\": \"order-service\",\n  \"affected_services\": [\n    \"order-service\",\n    \"checkout-service\"\n  ],\n  \"hypotheses\": [\n    {\n      \"rank\": 1,\n      \"root_cause\": \"PostgreSQL database connection pool exhaustion due to leaked connections or traffic spike exceeding max_connections limit.\",\n      \"confidence\": 0.96,\n      \"supporting_evidence\": [\n        \"ev-metric-db01\",\n        \"ev-log-db02\"\n      ]\n    }\n  ],\n  \"recommended_remediation\": {\n    \"action\": \"RESET_CONNECTION_POOL\",\n    \"target_service\": \"order-service\",\n    \"justification\": \"The database has reached its maximum connection limit as indicated by log evidence and metric deviations, preventing new queries. Resetting the connection pool will clear stale or leaked connections.\"\n  }\n}",
+    "attempt": 1,
+    "timestamp": "2026-11-11T05:45:30.967966+00:00"
+  },
+  "mcp_tools_verified": 7,
+  "evaluation_summary": {
+    "scenarios_count": 5,
+    "top1_accuracy": 1.0,
+    "top3_accuracy": 1.0,
+    "evidence_grounding_rate": 1.0,
+    "results": [
+      {
+        "scenario": "Scenario 1: Database Connection Pool Exhaustion",
+        "target": "order-service",
+        "injected_fault": "db_pool_exhaustion",
+        "top1_predicted_cause": "PostgreSQL database connection pool exhaustion in order-service",
+        "confidence": 0.96,
+        "top1_match": true,
+        "top3_match": true,
+        "evidence_cited_count": 3,
+        "remediation_action": "RESET_CONNECTION_POOL"
+      },
+      {
+        "scenario": "Scenario 2: Downstream Banking API Latency",
+        "target": "payment-service",
+        "injected_fault": "downstream_latency",
+        "top1_predicted_cause": "Downstream payment provider API timeouts leading to high latency",
+        "confidence": 0.85,
+        "top1_match": true,
+        "top3_match": true,
+        "evidence_cited_count": 3,
+        "remediation_action": "RESTART_SERVICE"
+      },
+      {
+        "scenario": "Scenario 3: CPU Saturation",
+        "target": "product-service",
+        "injected_fault": "cpu_saturation",
+        "top1_predicted_cause": "CPU Saturation and High Latency in product-service",
+        "confidence": 0.94,
+        "top1_match": true,
+        "top3_match": true,
+        "evidence_cited_count": 2,
+        "remediation_action": "RESTART_SERVICE"
+      },
+      {
+        "scenario": "Scenario 4: Memory Pressure",
+        "target": "checkout-service",
+        "injected_fault": "memory_pressure",
+        "top1_predicted_cause": "Recent code deployment introduced failing order fulfillment transactions in checkout-service",
+        "confidence": 0.88,
+        "top1_match": true,
+        "top3_match": true,
+        "evidence_cited_count": 2,
+        "remediation_action": "RESTART_SERVICE"
+      },
+      {
+        "scenario": "Scenario 5: Cascading Bad Deployment (Unencountered/Release Change)",
+        "target": "user-service",
+        "injected_fault": "bad_deployment",
+        "top1_predicted_cause": "Configuration regression introduced in release v2.4.1 causing missing JWT_SECRET_KEY environment variable",
+        "confidence": 0.98,
+        "top1_match": true,
+        "top3_match": true,
+        "evidence_cited_count": 3,
+        "remediation_action": "RESTART_SERVICE"
+      }
+    ]
+  },
+  "remediation_verified": {
+    "success_resolved": true,
+    "failure_remains_unresolved": true
+  }
+}

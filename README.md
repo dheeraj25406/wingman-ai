@@ -1,289 +1,249 @@
-# Wingman AI — Autonomous Production Incident Investigator
+# Wingman AI — Autonomous Production Reliability Engineer
 
 > **Your AI-powered production incident investigator.**  
-> *Machine learning detects WHAT is going wrong. The investigation agent determines WHY it is happening. Evaluation ensures the system is reliable.*
+> *Machine learning detects WHAT is going wrong. The investigation agent determines WHY it is happening. Closed-loop remediation and evaluation ensure the system recovers reliably.*
 
 [![CI](https://github.com/dheerajalamuri/wingman-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/dheerajalamuri/wingman-ai)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com/)
-[![React 18](https://img.shields.io/badge/React-18.2-blue.svg)](https://react.dev/)
+[![React 19](https://img.shields.io/badge/React-19.0-blue.svg)](https://react.dev/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-16--Node%20Workflow-orange.svg)](https://langchain-ai.github.io/langgraph/)
 [![Gemini](https://img.shields.io/badge/Gemini-3.5%20Flash--Lite-blueviolet.svg)](https://ai.google.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 1. Problem Statement & Motivation
-In modern microservice architectures, an isolated infrastructure fault (e.g. database connection starvation or downstream provider timeout) quickly triggers cascading 5xx errors and latency degradation across dozens of upstream services. On-call engineers are inundated with alert storms, spending 45+ minutes manually stitching together disparate metrics, log traces, and runbooks to identify the primary root cause.
+## 1. Problem Statement & Overview
 
-**Wingman AI** is an autonomous, ML-powered production incident investigation platform that monitors distributed telemetry in real time, deterministically isolates primary versus propagated failures using machine learning and dependency topology graphs, autonomously investigates using a 16-node LangGraph agent over the Model Context Protocol (MCP), cites verified evidence artifacts, and recommends safe, human-authorized remediations.
+In distributed microservice architectures, an isolated infrastructure failure (e.g. database connection starvation or downstream provider latency) quickly causes cascading 5xx errors and timeout storms across upstream dependencies. On-call engineers often spend 30–60 minutes manually stitching together disparate metrics, log traces, and runbooks to identify the primary failure point.
 
----
+**Wingman AI** is an autonomous production reliability platform that:
+1. **Detects Anomalies Deterministically**: Uses an unsupervised Isolation Forest and multi-class LightGBM classifier over a 16-dimensional telemetry feature vector.
+2. **Autonomously Investigates Root Cause**: Executes a 16-node state-machine agent using **LangGraph** and **Google Gemini 3.5 Flash-Lite**, fetching multi-modal diagnostic evidence (metrics, logs, traces, runbooks, deployments) via the **Model Context Protocol (MCP)**.
+3. **Recommends & Verifies Remediation**: Proposes targeted, whitelisted remediation actions (e.g. connection pool reset, rollback, service restart), enforces **Human-in-the-Loop approval**, and verifies closed-loop recovery against live telemetry.
 
-## 2. Architectural Blueprint
-
-```
-                                  +-------------------------------------------------------------+
-                                  |                     ENTERPRISE FRONTEND                     |
-                                  |        (React 18, Vite, TypeScript, Tailwind, React Flow)   |
-                                  +------------------------------+------------------------------+
-                                                                 | REST / SSE / WebSockets
-                                                                 v
-+-------------------------------------------------------------------------------------------------------------------------------+
-|                                                      BACKEND PLATFORM (FastAPI)                                               |
-|                                                                                                                               |
-|  +-----------------------+     +-------------------------+     +------------------------+     +----------------------------+  |
-|  |     API Routers       |     |  Incident Orchestrator  |     |   Fault Lab Controller |     |     Evaluation Runner      |  |
-|  | (Incidents, Services, |     | (Lifecycle & Correlation|     |  (Injection & Traffic  |     |   (ML Benchmark & Agent    |  |
-|  |  Metrics, Models, RAG)|     |         Engine)         |     |       Simulation)      |     |          Harness)          |  |
-|  +-----------+-----------+     +------------+------------+     +-----------+------------+     +-------------+--------------+  |
-|              |                              |                              |                                |                 |
-|              +------------------------------+------------------------------+--------------------------------+                 |
-|                                             |                                                                                 |
-|                                             v                                                                                 |
-|  +-------------------------------------------------------------------------------------------------------------------------+  |
-|  |                                              PERSISTENCE & STORAGE (SQLAlchemy 2)                                       |  |
-|  |  PostgreSQL / Async SQLite (Services, Incidents, Hypotheses, Evidence, ModelVersions, Evaluations, Remediations)       |  |
-|  +-------------------------------------------------------------------------------------------------------------------------+  |
-+-------------------------------------------------------------------------------------------------------------------------------+
-           |                                             |                                          ^
-           | Telemetry Stream / Ingestion                | Diagnostic Tool Calls                    | Model Inferences
-           v                                             v                                          |
-+------------------------------------+       +------------------------------------+       +------------------------------------+
-|  SIMULATOR & OBSERVABILITY PIPELINE|       |       MODEL CONTEXT PROTOCOL       |       |       MACHINE LEARNING ENGINE      |
-|                                    |       |            (MCP SERVER)            |       |                                    |
-| [API Gateway] -> [User Service]    |       | Strict JSON Schema Tools:          |       | 1. Feature Engineering (13 dims)   |
-| [API Gateway] -> [Product Service] | <---> | - get_service_metrics              | <---> | 2. Isolation Forest (Anomaly)      |
-| [API Gateway] -> [Checkout Service]|       | - search_logs                      |       | 3. LightGBM (Fault Classifier)     |
-|       |-----> [Payment Service]    |       | - get_trace                        |       | 4. CUSUM Change-point Detection    |
-|       +-----> [Order Service]      |       | - get_service_map                  |       | 5. Baseline Comparator             |
-|                  |                 |       | - get_recent_deployments           |       | 6. MLflow Experiment Tracker       |
-|                  v                 |       | - get_runbook                      |       +------------------------------------+
-|             [Database]             |       | - compare_service_baseline         |
-|                                    |       | - get_incident_history             |
-+------------------------------------+       +-----------------+------------------+
-                                                               ^
-                                                               | MCP Diagnostic Tool Dispatch
-                                                               v
-                                             +---------------------------------------------------------------------------------+
-                                             |                     AGENTIC INVESTIGATION ENGINE (LangGraph)                    |
-                                             |                                                                                 |
-                                             |  [Intake] -> [ContextBuilder] -> [AffectedServiceID] -> [Planner]              |
-                                             |      |                                                                          |
-                                             |      +--> [MetricsInv] -> [LogInv] -> [TraceInv] -> [DeployInv]                 |
-                                             |      |                                                                          |
-                                             |      +--> [Runbook RAG] (Hybrid Qdrant + BM25)                                  |
-                                             |      |                                                                          |
-                                             |      v                                                                          |
-                                             |  [Hypothesis Generation] (Google Gemini 3.5 Flash-Lite: Pydantic Validation)    |
-                                             |      |                                                                          |
-                                             |      v                                                                          |
-                                             |  [Evidence Validation] -> [Hypothesis Ranking] -> [Remediation Proposal]       |
-                                             |      |                                                                          |
-                                             |      v                                                                          |
-                                             |  [Safety Validation] -> [HUMAN APPROVAL GATE] -> [Execution & Verification]    |
-                                             +---------------------------------------------------------------------------------+
-```
+> [!NOTE]
+> **Simulation Architecture Notice**: The 6 monitored microservices (`api-gateway`, `user-service`, `product-service`, `checkout-service`, `payment-service`, `order-service`) operate through an in-process discrete-event microservice simulator (`simulator/services/mesh.py`). The simulator models realistic inter-service HTTP dependency graphs, database connection pools, queue backlogs, memory pressure, and CPU saturation. This enables reproducible fault injection, benchmarking, and closed-loop recovery verification in testing environments without requiring a multi-node Kubernetes cluster.
+>
+> In contrast, the application stack itself runs **3 independently containerized production services** via Docker Compose: `wingman-postgres` (PostgreSQL 16), `wingman-backend` (FastAPI + LangGraph + Uvicorn), and `wingman-frontend` (React 19 + Nginx reverse proxy).
 
 ---
 
-## 3. Machine Learning Engine & Mathematics
+## 2. System Architecture
 
-### Feature Engineering (13-Dimensional Standardized Vector)
-Every sliding telemetry window (sampled every 5 seconds) is mapped to:
-1. `cpu_utilization`: Instantaneous CPU percentage (0–100%)
-2. `memory_utilization`: Instantaneous Memory percentage (0–100%)
-3. `request_rate`: Requests Per Second (RPS)
-4. `error_rate`: $N_{5xx} / (N_{total} + \epsilon)$
-5. `latency_p50`: 50th percentile response duration (ms)
-6. `latency_p95`: 95th percentile response duration (ms)
-7. `latency_p99`: 99th percentile response duration (ms)
-8. `db_connections`: Active connection utilization (%)
-9. `queue_depth`: Async pending item backlog
-10. `timeout_rate`: Timeout ratio [0.0, 1.0]
-11. `cpu_rolling_mean_ratio`: $x_{cpu} / (\mu_{cpu, 5} + \epsilon)$
-12. `error_rate_delta`: First-order rate of change $(err_t - err_{t-1}) / \Delta t$
-13. `latency_baseline_zscore`: Normalized deviation $(p95_t - \mu_{baseline}) / (\sigma_{baseline} + \epsilon)$
+```mermaid
+flowchart TD
+    subgraph Client["Presentation Layer (Desktop & Mobile)"]
+        UI["React 19 + Vite Dashboard<br/>(Tailwind, Lucide, Recharts)"]
+    end
 
-### Model 1: Unsupervised Anomaly Detection (Isolation Forest)
-- **Algorithm**: `sklearn.ensemble.IsolationForest`
-- **Training Baseline**: Trained strictly on normal operation windows.
-- **Calibrated Scoring Formula**:
-  $$\text{Anomaly Score} = \text{clip}\left(\frac{1 - \text{decision\_function}(X)}{2}, 0.0, 1.0\right)$$
-- **Tuned Threshold**: $\theta = 0.5200$.
+    subgraph Ingress["Ingress & Defensive Security"]
+        NGX["Nginx 1.31 Reverse Proxy<br/>(:80 / :443)"]
+        SEC["FastAPI Security Middleware<br/>(Rate Limiting, X-Real-IP, CSP)"]
+    end
 
-### Model 2: Supervised Multi-Class Classifier (LightGBM)
-- **Algorithm**: `lightgbm.LGBMClassifier`
-- **Classes**:
-  - `0`: NORMAL
-  - `1`: DB_POOL_EXHAUSTION
-  - `2`: CPU_SATURATION
-  - `3`: MEMORY_PRESSURE
-  - `4`: DOWNSTREAM_API_FAILURE
-  - `5`: QUEUE_BACKLOG
-  - `6`: DEPLOYMENT_REGRESSION
-- **Split Strategy**: `GroupShuffleSplit` by entire experiment run to avoid temporal data leakage.
-- **Evaluation Baseline Comparison**: Directly benchmarked against `RandomForestClassifier`.
+    subgraph Core["Backend Platform (FastAPI / Python 3.11)"]
+        ROUTERS["API Routers<br/>(Incidents, Faults, Metrics, Health)"]
+        SIM["Microservice Mesh Simulator<br/>(6 Monitored Services)"]
+        ORCH["Incident Correlation Engine"]
+        REPO["Incident Repository & Alembic"]
+    end
 
-### Actual Benchmark Results on Held-Out Test Set (1,400 samples)
-```
-----------------------------------------------------------------------
- DETECTION PERFORMANCE (Binary: Normal vs Incident)
-----------------------------------------------------------------------
-Method                         | Precision  | Recall     | F1-Score  
-----------------------------------------------------------------------
-Static Heuristic Thresholds    | 1.0000     | 1.0000     | 1.0000    
-Isolation Forest (Ours)        | 0.9983     | 0.9725     | 0.9852    
+    subgraph ML["Machine Learning Pipeline"]
+        FEAT["16-Dim Feature Extractor"]
+        IF["Isolation Forest (Anomaly Detection)<br/>97.56% Recall, 0% FPR"]
+        LGBM["LightGBM (Fault Classifier)<br/>1.0000 Macro-F1 (Synthetic)"]
+    end
 
-----------------------------------------------------------------------
- CLASSIFICATION PERFORMANCE (7-Class LightGBM Classifier)
-----------------------------------------------------------------------
-Overall Macro Precision: 0.9993
-Overall Macro Recall:    0.9993
-Overall Macro F1-Score:  0.9993
+    subgraph Agent["Agentic Investigation Engine (LangGraph)"]
+        LG16["16-Node State Machine Agent"]
+        MCP["Model Context Protocol (MCP) Server<br/>(8 Diagnostic Tools)"]
+        GEMINI["Google Gemini 3.5 Flash-Lite<br/>(Structured Pydantic Validation)"]
+        GATE{"Human-in-the-Loop<br/>Approval Gate"}
+        EXEC["Remediation & Recovery Verification"]
+    end
 
-Per-Class Breakdown:
-                        precision    recall  f1-score   support
-                NORMAL       1.00      1.00      1.00       200
-    DB_POOL_EXHAUSTION       1.00      1.00      1.00       200
-        CPU_SATURATION       1.00      1.00      1.00       200
-       MEMORY_PRESSURE       1.00      1.00      1.00       200
-DOWNSTREAM_API_FAILURE       1.00      1.00      1.00       200
-         QUEUE_BACKLOG       1.00      0.99      1.00       200
- DEPLOYMENT_REGRESSION       1.00      1.00      1.00       200
+    subgraph Storage["Persistence Layer"]
+        PG[("PostgreSQL 16 Alpine<br/>(15 Migration Tables)")]
+    end
+
+    UI -->|REST / SSE| NGX
+    NGX -->|Internal Proxy| SEC
+    SEC --> ROUTERS
+    SIM -->|Telemetry Window (5s)| FEAT
+    FEAT --> IF & LGBM
+    IF & LGBM --> ORCH
+    ORCH --> ROUTERS
+    ROUTERS -->|Persist State| REPO
+    REPO --> PG
+    ROUTERS -->|Trigger Investigation| LG16
+    LG16 -->|Parallel Prefetch| MCP
+    LG16 -->|Reasoning Prompt| GEMINI
+    LG16 --> GATE
+    GATE -->|Authorized Operator| EXEC
+    EXEC -->|Verify Health| SIM
 ```
 
 ---
 
-## 4. Agentic AI & Model Context Protocol (MCP)
+## 3. Technology Stack
 
-### Centralized Gemini Provider
-- **Provider**: Google Gemini API via official `google-genai` Python SDK.
-- **Exact Model**: `gemini-3.5-flash-lite`.
-- **Structured Validation**: Every LLM response is parsed and validated against strict Pydantic schemas (`HypothesisListResponse`). Circuit-breaker fallback ensures zero crashes or fabricated hallucinations during network partitions.
-
-### Official MCP Server (`agent/mcp_server/server.py`)
-Exposes 8 strictly bounded, read-only diagnostic tools over Model Context Protocol:
-1. `get_service_metrics(service_id, limit)`
-2. `search_logs(service_id, level, query, limit)`
-3. `get_trace(trace_id)`
-4. `get_service_map()`
-5. `get_recent_deployments(service_id, lookback_minutes)`
-6. `compare_service_baseline(service_id)`
-7. `get_incident_history(service_id, limit)`
-
-### 16-Node LangGraph State Machine
-1. `node_intake`
-2. `node_context_builder`
-3. `node_affected_service_id`
-4. `node_investigation_planner`
-5. `node_metrics_investigation` (MCP Tool)
-6. `node_log_investigation` (MCP Tool)
-7. `node_trace_investigation` (MCP Tool)
-8. `node_deployment_investigation` (MCP Tool)
-9. `node_runbook_retrieval` (Hybrid BM25 + Vector RAG)
-10. `node_hypothesis_generation` (Gemini 3.5 Flash-Lite)
-11. `node_evidence_validation` (Grounding Check)
-12. `node_hypothesis_ranking`
-13. `node_remediation_recommendation`
-14. `node_safety_validation` (Whitelist Enforcement)
-15. `node_human_approval` (Human-in-the-Loop Gate)
-16. `node_recovery_verification` (Telemetry Health Check)
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Recharts, Lucide Icons |
+| **Backend API** | FastAPI, Uvicorn, Python 3.11, Pydantic v2, Starlette |
+| **Database & ORM** | PostgreSQL 16 Alpine, SQLAlchemy 2 (asyncpg), Alembic (15 migration tables) |
+| **Machine Learning** | Scikit-learn (Isolation Forest), LightGBM, NumPy, Pandas, Joblib |
+| **AI & Agent Workflow** | LangGraph, Google GenAI SDK (`gemini-3.5-flash-lite`), MCP Server |
+| **Container & CI** | Docker Compose v2, Nginx 1.31 Alpine, GitHub Actions CI |
 
 ---
 
-## 5. Quickstart & Local Setup
+## 4. Key Performance Benchmarks (Audited)
+
+All metrics below represent **empirically measured values** captured during standardized benchmark executions across controlled fault scenarios. See [`docs/BENCHMARK_REPORT.md`](docs/BENCHMARK_REPORT.md) for full methodology, raw JSON outputs, and statistical limitations.
+
+| Pillar | Measured Metric | Baseline | Optimized | Verification Summary |
+| :--- | :--- | :---: | :---: | :--- |
+| **ML Anomaly Detection** | **Recall** on held-out test split | 90.89% | **97.56%** | **+6.67% improvement** via 16-feature calibration |
+| **ML Anomaly Detection** | **False Positive Rate** | 0.00% | **0.00%** | Zero false alarms on normal baseline split |
+| **ML Inference Latency** | **p50 Latency** per feature vector | 3.06 ms | **3.07 ms** | Real-time scoring suitable for 5s telemetry windows |
+| **AI Investigation** | **Root-Cause Accuracy** | 83.33% | **83.33%** | Evaluated across 30 repeated fault trials |
+| **AI Evidence Grounding** | **Evidence Items Gathered** | 0.0 | **5.0 items** | Metrics, logs, traces, topology, runbooks |
+| **Remediation MTTR** | **Decision & Action MTTR** | 9.46 s | **4.92 s** | **-47.9% reduction** via parallel diagnostic prefetch |
+| **Remediation Safety** | **Verified Recovery Rate** | 100.0% | **100.0%** | Zero false recoveries across 30 live fault injections |
+| **Backend Throughput** | **Peak Throughput (5 clients)** | 1,059 RPS | **1,677 RPS** | **+58.4% improvement** via in-memory micro-caching |
+| **Backend Latency** | **p50 Latency (5 clients)** | 2.68 ms | **2.50 ms** | Sustained sub-3ms latency across 15,000 requests |
+| **Resource Efficiency** | **Full Docker Stack RAM** | — | **290.6 MiB** | Backend (237M), Frontend (9M), Postgres (44M) |
+
+---
+
+## 5. Quickstart & Local Installation
 
 ### Prerequisites
-- macOS (Apple Silicon M-series verified) or Linux
+- macOS (Apple Silicon verified) or Linux x86_64
 - Python 3.11+
-- Node.js 20+ & npm
+- Node.js 20+ & npm 10+
+- Docker Desktop or Docker Engine v24+
 
-### 1. Clone & Environment Configuration
+### Option A: Local Development Setup
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/dheerajalamuri/wingman-ai.git
+   cd wingman-ai
+   ```
+
+2. **Configure Environment Variables**:
+   ```bash
+   cp .env.example .env
+   # Add your Google Gemini API key if testing external live reasoning:
+   # GEMINI_API_KEY=your_key_here
+   ```
+
+3. **Backend Setup & Virtual Environment**:
+   ```bash
+   python3.11 -m venv .venv
+   source .venv/bin/activate
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+4. **Initialize Database Migrations**:
+   ```bash
+   DATABASE_URL="sqlite+aiosqlite:///./wingman.db" alembic upgrade head
+   ```
+
+5. **Frontend Setup**:
+   ```bash
+   cd frontend
+   npm ci
+   cd ..
+   ```
+
+6. **Run Automated Test Suite (31 Tests)**:
+   ```bash
+   DATABASE_URL="sqlite+aiosqlite:///./test_isolated.db" PYTHONPATH=. pytest tests/ backend/tests/ ml/tests/ agent/tests/
+   rm -f test_isolated.db
+   ```
+
+7. **Start Development Servers**:
+   - Terminal 1 (Backend & Telemetry Simulator):
+     ```bash
+     source .venv/bin/activate
+     PYTHONPATH=. uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+     ```
+   - Terminal 2 (React Vite Dashboard):
+     ```bash
+     cd frontend && npm run dev
+     ```
+   - Open browser at `http://localhost:5173`.
+
+---
+
+### Option B: Docker Compose Deployment
+
+#### 1. Local Development Profile
+Runs the full containerized stack with developer ports exposed (`5432` for database access, `8000` for backend API, `3000` for frontend):
 ```bash
-git clone https://github.com/dheerajalamuri/wingman-ai.git
-cd wingman-ai
-
 cp .env.example .env
-# Edit .env to add your GEMINI_API_KEY if testing live external LLM calls
+docker compose up -d --build
 ```
+- Frontend Dashboard: `http://localhost:3000`
+- Backend API Docs: `http://localhost:8000/docs`
+- Health Liveness: `http://localhost:8000/api/health/live`
+- Health Readiness: `http://localhost:8000/api/health/ready`
 
-### 2. Python Virtual Environment & Dependencies
+#### 2. Production Profile (`docker-compose.prod.yml`)
+Enforces strict security boundaries: PostgreSQL is internal-only (no host port exposure), backend is private, public ingress is routed solely through Nginx on port 80/443, non-root user execution is enforced, and administrative authorization is mandatory:
 ```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install greenlet
+ADMIN_API_KEY="your_secure_admin_key" \
+POSTGRES_PASSWORD="your_secure_db_pass" \
+docker compose -f docker-compose.prod.yml up -d --build
 ```
-
-### 3. Train ML Models
-```bash
-python -m ml.training.train_anomaly
-python -m ml.training.train_classifier
-python -m ml.evaluation.evaluate_models
-```
-
-### 4. Run Automated Test Suite
-```bash
-# Run all unit and integration tests (12 tests)
-PYTHONPATH=. pytest backend/tests ml/tests agent/tests -v
-
-# Run the complete end-to-end acceptance integration scenario
-PYTHONPATH=. python -m tests.test_end_to_end_scenario
-```
-
-### 5. Launch Backend & Frontend Servers
-In Terminal 1 (Backend API & Telemetry Simulator):
-```bash
-source .venv/bin/activate
-PYTHONPATH=. uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-In Terminal 2 (React Enterprise Dashboard):
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open your browser at `http://localhost:5173`.
 
 ---
 
-## 6. Full Docker Compose Deployment
+## 6. Interactive Incident Lifecycle Walkthrough
 
-```bash
-docker compose up --build
-```
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:8000`
-- Interactive OpenAPI Docs: `http://localhost:8000/docs`
-
----
-
-## 7. Interactive Demonstration Script (Fault Lab Walkthrough)
-
-1. Open `http://localhost:5173`. Notice all 6 microservices reporting **Healthy** with normal baseline latency (~35ms).
+1. Open `http://localhost:3000` (or `http://localhost:5173`). Observe the **Overview** dashboard reporting 6 healthy microservices with ~35ms baseline latency.
 2. Navigate to **Fault Lab** (`/fault-lab`).
-3. Select **DB Connection Pool Exhaustion** on `order-service` with intensity `0.85` and click **"Inject Fault into Telemetry Pipeline"**.
-4. Return to **Overview** (`/`). Observe `order-service` and dependent `checkout-service` degrade:
-   - Database connection utilization jumps to 99%.
-   - Latency P95 spikes from 70ms to > 2500ms.
-   - 5xx error rate spikes.
-5. In **Incidents** (`/incidents`), click **"Scan Anomaly Pipeline"** or wait for the automatic scan.
-6. Open the newly detected incident deep-dive.
-7. Click **"Run Investigation Workflow"**.
-   - Watch the 16-node LangGraph workflow execute.
-   - Inspect the collected evidence artifacts (metric spikes, error logs, runbook match `[RB-DB-001]`).
-   - Review the ranked hypothesis: **"PostgreSQL database connection pool exhaustion on order-service" (Confidence: 96%)**.
+3. Select **DB Connection Pool Exhaustion** on `order-service` with intensity `0.85`, duration `180s`, and click **"Inject Fault"**.
+4. Return to **Overview** (`/`). Observe real-time telemetry degradation:
+   - `order-service` database connections surge to 99%.
+   - Latency p95 spikes from 70ms to > 2,500ms.
+   - Upstream `checkout-service` and `api-gateway` begin cascading 5xx timeouts.
+5. In **Incidents** (`/incidents`), click **"Scan Anomaly Pipeline"** (or wait for the 5-second autonomous scan).
+6. Click into the newly generated incident (`/incidents/inc-...`).
+7. Click **"Run Investigation Workflow"**:
+   - Watch the 16-node LangGraph agent prefetch metrics, search error logs, trace distributed spans, and retrieve runbook `[RB-DB-001]`.
+   - Review Gemini's structured hypothesis: *"PostgreSQL connection pool exhaustion on order-service (Confidence: 96%)"*.
 8. Inspect the proposed remediation: `RESET_CONNECTION_POOL` on `order-service`.
 9. Enter operator notes and click **"Approve & Execute Remediation"**.
-10. Telemetry recovery verifies healthy normalization. The incident transitions to **RESOLVED**.
+10. The simulator resets the pool. The closed-loop verification node monitors recovery telemetry, confirms healthy operation, and marks the incident **RESOLVED**.
 
 ---
 
-## 8. Technical Invariants & Interview Talking Points
-- **Machine Learning vs Agent Decoupling**: We do not ask the LLM to do numerical anomaly detection on millions of metric points. Isolation Forest and LightGBM handle mathematical detection; Gemini handles semantic reasoning and runbook grounding.
-- **Zero Hallucinated Evidence**: Every generated hypothesis must reference a verified evidence ID from the MCP diagnostic phase.
-- **Group-Aware Splitting**: Splitting time-series telemetry randomly leaks adjacent time samples. We split datasets strictly by entire experiment runs.
-- **Bounded Remediation Safety**: Zero arbitrary shell or script execution. All remediations are whitelisted, deterministic backend functions requiring human operator authorization.
+## 7. Security & Hardening Highlights
+
+- **Zero Secret Exposure**: Gemini API keys and database credentials remain strictly server-side.
+- **Fail-Closed Authorization**: Constant-time token checks protect all mutating endpoints (`/faults/inject`, `/faults/stop-all`, `/incidents/{id}/investigate`, `/incidents/{id}/approve`).
+- **Non-Root Containers**: Backend Docker containers run under unprivileged user `appuser` (UID 1000).
+- **Rate Limiting**: Sliding-window limiter defends against brute force and DDoS on public ingress.
+- **Dependency Auditing**: Verified zero known vulnerabilities with `pip-audit`.
+
+For detailed security guidelines, see [`docs/SECURITY.md`](docs/SECURITY.md).
+
+---
+
+## 8. Current Limitations & Future Work
+
+- **In-Process Telemetry Simulator**: Current microservice topology is generated by an in-process discrete-event simulator rather than a live multi-node Kubernetes cluster.
+- **Deterministic Service Topology**: Currently models 6 core microservices; enterprise scaling to 100+ services will require dynamic topology discovery via eBPF or service mesh APIs (Istio / Linkerd).
+- **Public LLM API Quotas**: Google Gemini Free Tier limits requests to 15 RPM. Production enterprise deployments should use Vertex AI or dedicated LLM endpoints with auto-scaling quotas.
+
+---
+
+## 9. License
+
+This project is licensed under the [MIT License](LICENSE).

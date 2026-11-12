@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "target_url": "http://localhost:8000",
+    "timestamp": "2026-11-12T11:36:05Z",
+    "concurrency_levels": [
+      1,
+      5,
+      10,
+      25,
+      50
+    ],
+    "requests_per_concurrency": 60,
+    "endpoints": [
+      "/api/health/live",
+      "/api/services",
+      "/api/metrics/overview",
+      "/api/incidents"
+    ]
+  },
+  "concurrency_benchmarks": [
+    {
+      "concurrency": 1,
+      "total_requests": 60,
+      "duration_seconds": 0.157,
+      "throughput_rps": 382.46,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "latency_ms": {
+        "mean": 2.58,
+        "p50": 1.16,
+        "p95": 6.24,
+        "p99": 20.82,
+        "max": 21.8
+      },
+      "per_endpoint_p95": {
+        "health_live": 7.88,
+        "services_list": 1.53,
+        "metrics_overview": 1.53,
+        "incidents_list": 11.87
+      }
+    },
+    {
+      "concurrency": 5,
+      "total_requests": 60,
+      "duration_seconds": 0.057,
+      "throughput_rps": 1058.74,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "latency_ms": {
+        "mean": 4.48,
+        "p50": 2.68,
+        "p95": 10.96,
+        "p99": 12.5,
+        "max": 12.92
+      },
+      "per_endpoint_p95": {
+        "health_live": 4.44,
+        "services_list": 4.04,
+        "metrics_overview": 4.64,
+        "incidents_list": 12.42
+      }
+    },
+    {
+      "concurrency": 10,
+      "total_requests": 60,
+      "duration_seconds": 0.064,
+      "throughput_rps": 937.04,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "latency_ms": {
+        "mean": 9.85,
+        "p50": 6.75,
+        "p95": 21.72,
+        "p99": 39.97,
+        "max": 42.83
+      },
+      "per_endpoint_p95": {
+        "health_live": 7.56,
+        "services_list": 8.47,
+        "metrics_overview": 8.9,
+        "incidents_list": 39.43
+      }
+    },
+    {
+      "concurrency": 25,
+      "total_requests": 60,
+      "duration_seconds": 0.07,
+      "throughput_rps": 856.01,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "latency_ms": {
+        "mean": 21.86,
+        "p50": 14.4,
+        "p95": 51.24,
+        "p99": 57.69,
+        "max": 63.87
+      },
+      "per_endpoint_p95": {
+        "health_live": 21.33,
+        "services_list": 18.98,
+        "metrics_overview": 19.29,
+        "incidents_list": 56.54
+      }
+    },
+    {
+      "concurrency": 50,
+      "total_requests": 60,
+      "duration_seconds": 0.255,
+      "throughput_rps": 235.25,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "latency_ms": {
+        "mean": 176.61,
+        "p50": 206.81,
+        "p95": 248.64,
+        "p99": 251.95,
+        "max": 252.32
+      },
+      "per_endpoint_p95": {
+        "health_live": 241.82,
+        "services_list": 243.52,
+        "metrics_overview": 236.76,
+        "incidents_list": 251.88
+      }
+    }
+  ]
+}

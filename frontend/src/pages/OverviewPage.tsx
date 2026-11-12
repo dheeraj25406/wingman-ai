@@ -197,16 +197,16 @@ export const OverviewPage: React.FC = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="latencyMono" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EAE8E3" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#EAE8E3" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#F2F2F2" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#F2F2F2" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
-                  <YAxis stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
+                  <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
+                  <YAxis stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111111', borderColor: '#252525', borderRadius: '3px', fontSize: '11px', color: '#EAE8E3' }}
+                    contentStyle={{ backgroundColor: '#111111', borderColor: '#303030', borderRadius: '3px', fontSize: '11px', color: '#F2F2F2' }}
                   />
-                  <Area type="monotone" dataKey="p95" stroke="#EAE8E3" strokeWidth={1.25} fill="url(#latencyMono)" />
+                  <Area type="monotone" dataKey="p95" stroke="#F2F2F2" strokeWidth={1.25} fill="url(#latencyMono)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -229,16 +229,16 @@ export const OverviewPage: React.FC = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="errorCoral" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D66A61" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#D66A61" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#D96C6C" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#D96C6C" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
-                  <YAxis stroke="#252525" tick={{ fill: '#686761', fontSize: 10 }} tickLine={false} />
+                  <XAxis dataKey="time" stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
+                  <YAxis stroke="#252525" tick={{ fill: '#858585', fontSize: 10 }} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111111', borderColor: '#252525', borderRadius: '3px', fontSize: '11px', color: '#EAE8E3' }}
+                    contentStyle={{ backgroundColor: '#111111', borderColor: '#303030', borderRadius: '3px', fontSize: '11px', color: '#F2F2F2' }}
                   />
-                  <Area type="monotone" dataKey="error_rate" stroke="#D66A61" strokeWidth={1.25} fill="url(#errorCoral)" />
+                  <Area type="monotone" dataKey="error_rate" stroke="#D96C6C" strokeWidth={1.25} fill="url(#errorCoral)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

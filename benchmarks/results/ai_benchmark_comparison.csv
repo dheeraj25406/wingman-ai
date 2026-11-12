@@ -1,0 +1,4 @@
+Architecture,Stage,Total_Trials,Top1_Accuracy,Avg_Evidence_Items,Safety_Compliance,p50_Latency_ms,Mean_Latency_ms,Audit_Status
+16-Node LangGraph Agent,Optimized,30,0.8333,5.0,1.0,7033.08,7457.9,Verified (Multi-hop)
+Single-Shot Gemini 3.5 Flash-Lite,Audited Baseline,6,0.8333,0.0,83.3%,1341.7,1794.3,Verified (Live API Call)
+Static Heuristic Rule Engine,Audited Baseline,6,0.8333,0.0,100.0%,0.0005,0.0005,Verified (No Label Leakage)

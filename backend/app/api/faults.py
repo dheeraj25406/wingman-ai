@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 
 from backend.app.schemas.schemas import FaultInjectRequest
+from backend.app.core.security import verify_admin_authorization
 from simulator.faults.fault_engine import fault_engine
 from simulator.services.mesh import service_mesh
 
@@ -35,7 +36,10 @@ async def list_faults() -> Dict[str, Any]:
 
 
 @router.post("/inject")
-async def inject_fault(req: FaultInjectRequest) -> Dict[str, Any]:
+async def inject_fault(
+    req: FaultInjectRequest,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     try:
         fault = fault_engine.inject_fault(
             fault_type=req.fault_type,
@@ -61,7 +65,10 @@ async def inject_fault(req: FaultInjectRequest) -> Dict[str, Any]:
 
 
 @router.post("/{fault_id}/stop")
-async def stop_fault(fault_id: str) -> Dict[str, Any]:
+async def stop_fault(
+    fault_id: str,
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     fault = fault_engine.stop_fault(fault_id)
     if not fault:
         raise HTTPException(status_code=404, detail=f"Active fault {fault_id} not found")
@@ -69,6 +76,8 @@ async def stop_fault(fault_id: str) -> Dict[str, Any]:
 
 
 @router.post("/stop-all")
-async def stop_all_faults() -> Dict[str, Any]:
+async def stop_all_faults(
+    _auth: bool = Depends(verify_admin_authorization),
+) -> Dict[str, Any]:
     stopped = fault_engine.stop_all_faults()
     return {"status": "success", "message": f"Stopped {len(stopped)} active faults"}
