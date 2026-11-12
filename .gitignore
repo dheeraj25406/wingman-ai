@@ -34,7 +34,7 @@ ENV/
 # Database
 *.sqlite3
 *.db
-data/
+/data/
 qdrant_storage/
 
 # MLflow
